@@ -1,6 +1,6 @@
 # Tester
 
-Консольный LLM-агент для генерации и починки тестов: unit, integration, UI и contract.
+LLM-агент для генерации и починки тестов: unit, integration, UI и contract.
 
 Поддерживаемые языки: Go, C++, Rust, JS/TS, Dart/Flutter, Kotlin, Python, PHP.
 
@@ -19,6 +19,10 @@ cargo run -- run /проект --kind unit
 
 # Починить баг по traceback
 cargo run -- debug /проект --bug-file /tmp/panic.txt --reproduce-only
+
+# Проверить полезность тестов (мутации)
+cargo run -- eval /проект --max-symbols 5
+cargo run -- eval ./tests/fixtures --suite
 
 # UI e2e
 cargo run -- ui init /web-app

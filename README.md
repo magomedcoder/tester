@@ -1,6 +1,6 @@
 # Tester
 
-A console LLM agent for generating and fixing tests: unit, integration, UI, and contract.
+LLM agent for generating and fixing tests: unit, integration, UI, and contract.
 
 Supported languages: Go, C++, Rust, JS/TS, Dart/Flutter, Kotlin, Python, PHP.
 
@@ -19,6 +19,10 @@ cargo run -- run /project --kind unit
 
 # Fix a bug from a traceback
 cargo run -- debug /project --bug-file /tmp/panic.txt --reproduce-only
+
+# Check test usefulness (mutations)
+cargo run -- eval /project --max-symbols 5
+cargo run -- eval ./tests/fixtures --suite
 
 # UI e2e
 cargo run -- ui init /web-app
