@@ -152,6 +152,17 @@ pub enum Commands {
         no_stream: bool,
     },
 
+    Tui {
+        #[arg(value_name = "PATH")]
+        path: Option<PathBuf>,
+        #[arg(long)]
+        dry_run: bool,
+        #[arg(long)]
+        resume: bool,
+        #[arg(long)]
+        plain: bool,
+    },
+
     Debug {
         path: PathBuf,
         #[arg(long)]
@@ -323,6 +334,12 @@ fn run_cli(cli: Cli) -> Result<ExitCode> {
             stream,
             no_stream,
         } => cmd_chat(&path, dry_run, stream && !no_stream),
+        Commands::Tui {
+            path,
+            dry_run,
+            resume,
+            plain,
+        } => cmd_tui(path, dry_run, resume, plain),
         Commands::Debug {
             path,
             bug,
@@ -546,6 +563,24 @@ fn cmd_chat(path: &PathBuf, dry_run: bool, stream: bool) -> Result<ExitCode> {
     let ctx = build_agent_ctx(path, dry_run, stream)?;
     mirror_cancel(Arc::clone(&ctx.cancel));
     run_repl(&ctx)?;
+    Ok(ExitCode::OK)
+}
+
+fn cmd_tui(
+    path: Option<PathBuf>,
+    dry_run: bool,
+    resume: bool,
+    plain: bool,
+) -> Result<ExitCode> {
+    if plain {
+        let path = path.ok_or_else(|| anyhow!("`--plain` требует PATH"))?;
+        return cmd_chat(&path, dry_run, true);
+    }
+    crate::tui::run(crate::tui::TuiOptions {
+        path,
+        dry_run,
+        resume,
+    })?;
     Ok(ExitCode::OK)
 }
 

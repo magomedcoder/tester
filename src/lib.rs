@@ -33,6 +33,7 @@ pub mod prompts;
 pub mod repair;
 pub mod report;
 pub mod security;
+pub mod tui;
 pub mod validate;
 
 pub use cli::run;

@@ -171,6 +171,22 @@ cargo run -- chat /путь-проекту
 
 В `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/config`, `/clear`, `/audit`, `/exit`.
 
+### `tui`
+
+Интерактивный терминальный UI (каркас). Нужен TTY. `q` / Esc - выход. Fallback: `--plain` -> `chat` (нужен PATH).
+
+```bash
+cargo run -- tui
+cargo run -- tui /путь-проекту --dry-run
+cargo run -- tui /путь-проекту --plain
+```
+
+| Флаг        | Описание                            |
+| ----------- | ----------------------------------- |
+| `--dry-run` | Проброс в будущую session / agent   |
+| `--resume`  | Зарезервировано под resume сессии   |
+| `--plain`   | Классический `chat` REPL вместо TUI |
+
 ### `ui init`
 
 Минимальный Playwright: `playwright.config.ts`, каталог `e2e/`, запись секции UI в `tester.toml` (если файла ещё нет), `npm install` + chromium по возможности.
@@ -231,7 +247,7 @@ agent_auto_approve = false
 | Ключ           | По умолчанию               | Описание                              |
 | -------------- | -------------------------- | ------------------------------------- |
 | `base_url`     | `http://127.0.0.1:8080/v1` | OpenAI-совместимый api base URL       |
-| `model`        | — (обязателен)             | Имя модели                            |
+| `model`        | - (обязателен)             | Имя модели                            |
 | `api_key`      | нет                        | Ключ API (только из файла, не из env) |
 | `max_tokens`   | `4096`                     | Лимит токенов ответа                  |
 | `timeout_secs` | `120`                      | Таймаут запроса к модели              |
