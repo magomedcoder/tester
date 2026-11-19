@@ -47,7 +47,7 @@ pub fn run_doctor(path: &Path) -> Result<DoctorReport> {
 
     checks.push(check_llm(&config));
     checks.push(check_toolchain(&profile));
-    checks.push(check_ui(&profile, &config));
+    checks.push(check_ui(&profile));
     checks.push((
         "android_opt_in".into(),
         true,
@@ -72,7 +72,7 @@ pub fn run_ui_doctor(path: &Path) -> Result<DoctorReport> {
     let profile = discover(path)?;
     let config = Config::load(&profile.root)?;
     let mut checks = Vec::new();
-    checks.push(check_ui(&profile, &config));
+    checks.push(check_ui(&profile));
     let base = &config.tests.ui.base_url;
     checks.push(("ui.base_url".into(), !base.is_empty(), base.clone()));
     checks.push((
@@ -154,8 +154,8 @@ fn check_toolchain(profile: &ProjectProfile) -> (String, bool, String) {
     )
 }
 
-fn check_ui(profile: &ProjectProfile, config: &Config) -> (String, bool, String) {
-    if !profile.capabilities.ui && !config.tests.ui.enabled {
+fn check_ui(profile: &ProjectProfile) -> (String, bool, String) {
+    if !profile.capabilities.ui {
         return ("ui".into(), true, "не требуется".into());
     }
     let ready = profile.ui_ready

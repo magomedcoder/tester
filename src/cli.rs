@@ -700,10 +700,6 @@ fn cmd_run(
     }
     let config = load_config(&profile)?;
     apply_config_flags(&mut profile, &config);
-    let mut config = config;
-    if kind == TestKind::Ui {
-        config.tests.ui.enabled = true;
-    }
     let plan = build_plan_with(&profile, &config, kind, &opts)?;
     if plan.items.is_empty() {
         for w in &plan.warnings {
@@ -886,7 +882,6 @@ export default defineConfig({
     let tester_toml = root.join("tester.toml");
     if !tester_toml.exists() {
         let body = r#"[tests.ui]
-enabled = true
 framework = "playwright"
 base_url = "http://127.0.0.1:3456"
 start = "python3 -m http.server 3456"

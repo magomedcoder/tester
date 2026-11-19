@@ -43,35 +43,11 @@ pub struct TargetConfig {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct TestsConfig {
     #[serde(default)]
-    pub unit: KindToggle,
-    #[serde(default)]
-    pub integration: KindToggle,
-    #[serde(default)]
     pub ui: UiConfig,
-    #[serde(default)]
-    pub contract: KindToggle,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct KindToggle {
-    #[serde(default = "default_true")]
-    pub enabled: bool,
-}
-
-impl Default for KindToggle {
-    fn default() -> Self {
-        Self { enabled: true }
-    }
-}
-
-fn default_true() -> bool {
-    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UiConfig {
-    #[serde(default)]
-    pub enabled: bool,
     #[serde(default = "default_ui_framework")]
     pub framework: String,
     #[serde(default = "default_ui_base_url")]
@@ -83,7 +59,6 @@ pub struct UiConfig {
 impl Default for UiConfig {
     fn default() -> Self {
         Self {
-            enabled: false,
             framework: default_ui_framework(),
             base_url: default_ui_base_url(),
             start: None,
@@ -216,17 +191,6 @@ impl Config {
             run: raw.run.unwrap_or_default(),
         })
     }
-
-    pub fn kind_enabled(&self, kind: crate::model::TestKind) -> bool {
-        use crate::model::TestKind;
-        match kind {
-            TestKind::Unit => self.tests.unit.enabled,
-            TestKind::Integration => self.tests.integration.enabled,
-            TestKind::Ui => self.tests.ui.enabled,
-            TestKind::Contract => self.tests.contract.enabled,
-            TestKind::All => true,
-        }
-    }
 }
 
 #[cfg(test)]
@@ -239,8 +203,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let cfg = Config::load(dir.path()).unwrap();
         assert_eq!(cfg.run.repair_attempts, 3);
-        assert!(cfg.tests.unit.enabled);
-        assert!(!cfg.tests.ui.enabled);
+        assert_eq!(cfg.tests.ui.framework, "playwright");
     }
 
     #[test]

@@ -4,35 +4,43 @@ LLM agent for generating and fixing tests: unit, integration, UI, and contract.
 
 Supported languages: Go, C++, Rust, JS/TS, Dart/Flutter, Kotlin, Python, PHP.
 
+### Build from source
+
 ```bash
-cargo build
-cargo run -- run /path/to/project
-cargo run -- agent /path/to/project "cover multiply with unit tests"
-cargo run -- chat /path/to/project
-cargo run -- tui
-cargo run -- tui /path/to/project
+cargo build --release
+# binary: target/release/tester
+```
+
+## Quick start
+
+```bash
+tester run /path/to/project
+tester agent /path/to/project "cover multiply with unit tests"
+tester chat /path/to/project
+tester tui
+tester tui /path/to/project
 ```
 
 ### Common scenarios
 
 ```bash
 # Write unit tests
-cargo run -- run /project --kind unit
+tester run /project --kind unit
 
 # Fix a bug from a traceback
-cargo run -- debug /project --bug-file /tmp/panic.txt --reproduce-only
+tester debug /project --bug-file /tmp/panic.txt --reproduce-only
 
 # Check test usefulness (mutations)
-cargo run -- eval /project --max-symbols 5
-cargo run -- eval ./tests/fixtures --suite
+tester eval /project --max-symbols 5
+tester eval ./tests/fixtures --suite
 
 # UI e2e
-cargo run -- ui init /web-app
-cargo run -- ui doctor /web-app
-cargo run -- run /web-app --kind ui
+tester ui init /web-app
+tester ui doctor /web-app
+tester run /web-app --kind ui
 
 # Environment health
-cargo run -- doctor /project
+tester doctor /project
 ```
 
 Config: `<root>/tester.toml`. Default `--kind all`; `run` writes files immediately (disable with `--dry-run`).
@@ -57,8 +65,8 @@ Most commands take `<PATH>` - path to the project or any file inside it (root is
 Project profile without calling the model: language, package, test command, frameworks, capabilities, notes.
 
 ```bash
-cargo run -- scan /path/to/project
-cargo run -- scan /path/to/project --format json
+tester scan /path/to/project
+tester scan /path/to/project --format json
 ```
 
 ### `plan`
@@ -66,9 +74,9 @@ cargo run -- scan /path/to/project --format json
 List of coverage targets. Does not call the model.
 
 ```bash
-cargo run -- plan /path/to/project --kind unit
-cargo run -- plan /path/to/project --kind all --base main
-cargo run -- plan /path/to/project --kind unit --bug "panic in multiply"
+tester plan /path/to/project --kind unit
+tester plan /path/to/project --kind all --base main
+tester plan /path/to/project --kind unit --bug "panic in multiply"
 ```
 
 | Flag                | Description                                              |
@@ -85,10 +93,10 @@ cargo run -- plan /path/to/project --kind unit --bug "panic in multiply"
 Generate drafts via LLM. By default files are not written - a diff is printed. Use `--write` to persist.
 
 ```bash
-cargo run -- generate /path/to/project --kind unit
-cargo run -- generate /path/to/project --kind unit --write
-cargo run -- generate /path/to/project --kind unit --write --update
-cargo run -- generate /path/to/project --kind unit --append --write
+tester generate /path/to/project --kind unit
+tester generate /path/to/project --kind unit --write
+tester generate /path/to/project --kind unit --write --update
+tester generate /path/to/project --kind unit --append --write
 ```
 
 | Flag                                                               | Description                                                                      |
@@ -102,9 +110,9 @@ cargo run -- generate /path/to/project --kind unit --append --write
 Full cycle: plan -> generate -> write -> run -> repair on failure (up to `repair_attempts`).
 
 ```bash
-cargo run -- run /path/to/project
-cargo run -- run /path/to/project --kind ui
-cargo run -- run /path/to/project --dry-run
+tester run /path/to/project
+tester run /path/to/project --kind ui
+tester run /path/to/project --dry-run
 ```
 
 Flags match `generate`, but writing is on by default; `--dry-run` - diff only, no write and no test run.
@@ -114,7 +122,7 @@ Flags match `generate`, but writing is on by default; `--dry-run` - diff only, n
 Continue fixing the last failed draft (state in the project's `.tester/`).
 
 ```bash
-cargo run -- repair /path/to/project
+tester repair /path/to/project
 ```
 
 ### `eval`
@@ -122,9 +130,9 @@ cargo run -- repair /path/to/project
 Mutations of covered symbols (arithmetic / boolean / off-by-one / branch / null). No model required.
 
 ```bash
-cargo run -- eval /path/to/project --max-symbols 5
-cargo run -- eval /path/to/fixtures --suite
-cargo run -- eval /path/to/project --json
+tester eval /path/to/project --max-symbols 5
+tester eval /path/to/fixtures --suite
+tester eval /path/to/project --json
 ```
 
 ### `debug`
@@ -132,9 +140,9 @@ cargo run -- eval /path/to/project --json
 From traceback -> minimal reproducing test -> validate/repair.
 
 ```bash
-cargo run -- debug /project --bug "panic in multiply at src/lib.rs:10"
-cargo run -- debug /project --bug-file ./fail.log --reproduce-only
-echo "$TRACE" | cargo run -- debug /project --stdin --reproduce-only
+tester debug /project --bug "panic in multiply at src/lib.rs:10"
+tester debug /project --bug-file ./fail.log --reproduce-only
+echo "$TRACE" | tester debug /project --stdin --reproduce-only
 ```
 
 ### `doctor` / `ui doctor`
@@ -142,16 +150,16 @@ echo "$TRACE" | cargo run -- debug /project --stdin --reproduce-only
 Check LLM, toolchain, UI runner, android/docker.
 
 ```bash
-cargo run -- doctor /project
-cargo run -- ui doctor /web-app
+tester doctor /project
+tester ui doctor /web-app
 ```
 
 ### `plan --show` / `plan --apply`
 
 ```bash
-cargo run -- plan /project --kind unit --max-items 10 --coverage lcov.info
-cargo run -- plan /project --show
-cargo run -- plan /project --apply
+tester plan /project --kind unit --max-items 10 --coverage lcov.info
+tester plan /project --show
+tester plan /project --apply
 ```
 
 ### `agent` / `chat`
@@ -159,9 +167,9 @@ cargo run -- plan /project --apply
 Console agent with a tool-calling loop (scan/plan/write_test/run_tests/repair + fs/git).
 
 ```bash
-cargo run -- agent /path/to/project "add unit tests for multiply"
-cargo run -- agent /path/to/project "fix failing tests" --resume --dry-run
-cargo run -- chat /path/to/project
+tester agent /path/to/project "add unit tests for multiply"
+tester agent /path/to/project "fix failing tests" --resume --dry-run
+tester chat /path/to/project
 ```
 
 | Flag          | Description                                      |
@@ -178,9 +186,9 @@ In `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/config`, `/clear`, `/audi
 Interactive terminal UI (scaffold). Requires a TTY. `q` / Esc quit. Fallback: `--plain` -> `chat` (PATH required).
 
 ```bash
-cargo run -- tui
-cargo run -- tui /path/to/project --dry-run
-cargo run -- tui /path/to/project --plain
+tester tui
+tester tui /path/to/project --dry-run
+tester tui /path/to/project --plain
 ```
 
 | Flag        | Description                                     |
@@ -194,8 +202,8 @@ cargo run -- tui /path/to/project --plain
 Minimal Playwright setup: `playwright.config.ts`, `e2e/` directory, UI section in `tester.toml` (if the file does not exist yet), `npm install` + chromium when possible.
 
 ```bash
-cargo run -- ui init /path/to/web-app
-cargo run -- run /path/to/web-app --kind ui
+tester ui init /path/to/web-app
+tester run /path/to/web-app --kind ui
 ```
 
 ### `cpp init`
@@ -203,8 +211,8 @@ cargo run -- run /path/to/web-app --kind ui
 CMake + GoogleTest scaffold (`tests/`), minimal `src/add.cpp`.
 
 ```bash
-cargo run -- cpp init /path/to/cpp-app
-cargo run -- run /path/to/cpp-app --kind unit
+tester cpp init /path/to/cpp-app
+tester run /path/to/cpp-app --kind unit
 ```
 
 ## Config `tester.toml`
@@ -217,17 +225,7 @@ api_key = ""
 max_tokens = 4096
 timeout_secs = 120
 
-[tests.unit]
-enabled = true
-
-[tests.integration]
-enabled = true
-
-[tests.contract]
-enabled = true
-
 [tests.ui]
-enabled = false
 framework = "playwright"
 base_url = "http://127.0.0.1:3000"
 start = "python3 -m http.server 3000"
@@ -254,17 +252,15 @@ agent_auto_approve = false
 | `max_tokens`   | `4096`                     | Response token limit                   |
 | `timeout_secs` | `120`                      | Model request timeout                  |
 
-### `[tests.*]`
+### `[tests.ui]`
 
-| Key                         | Default                 | Description                                             |
-| --------------------------- | ----------------------- | ------------------------------------------------------- |
-| `tests.unit.enabled`        | `true`                  | Include unit targets                                    |
-| `tests.integration.enabled` | `true`                  | Include integration targets                             |
-| `tests.contract.enabled`    | `true`                  | Include contract targets                                |
-| `tests.ui.enabled`          | `false`                 | UI targets (auto-enabled for `run --kind ui`)           |
-| `tests.ui.framework`        | `playwright`            | UI framework                                            |
-| `tests.ui.base_url`         | `http://127.0.0.1:3000` | Playwright baseURL                                      |
-| `tests.ui.start`            | none                    | Shell command to start a local server before the UI run |
+| Key                  | Default                 | Description                                             |
+| -------------------- | ----------------------- | ------------------------------------------------------- |
+| `tests.ui.framework` | `playwright`            | UI framework                                            |
+| `tests.ui.base_url`  | `http://127.0.0.1:3000` | Playwright baseURL                                      |
+| `tests.ui.start`     | none                    | Shell command to start a local server before the UI run |
+
+All kinds (unit, integration, UI, contract) are always enabled; filter with `--kind`.
 
 ### `[run]`
 

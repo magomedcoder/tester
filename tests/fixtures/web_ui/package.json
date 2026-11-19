@@ -1,0 +1,6 @@
+{
+  "name": "fixture_web_ui",
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

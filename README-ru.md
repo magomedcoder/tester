@@ -4,33 +4,43 @@ LLM-агент для генерации и починки тестов: unit, i
 
 Поддерживаемые языки: Go, C++, Rust, JS/TS, Dart/Flutter, Kotlin, Python, PHP.
 
+### Сборка из исходников
+
 ```bash
-cargo build
-cargo run -- run /путь-проекту
-cargo run -- agent /путь-проекту "покрой unit-тестами multiply"
-cargo run -- chat /путь-проекту
+cargo build --release
+# бинарник: target/release/tester
+```
+
+## Быстрый старт
+
+```bash
+tester run /путь-проекту
+tester agent /путь-проекту "покрой unit-тестами multiply"
+tester chat /путь-проекту
+tester tui
+tester tui /путь-проекту
 ```
 
 ### Типовые сценарии
 
 ```bash
 # Написать unit-тесты
-cargo run -- run /проект --kind unit
+tester run /проект --kind unit
 
 # Починить баг по traceback
-cargo run -- debug /проект --bug-file /tmp/panic.txt --reproduce-only
+tester debug /проект --bug-file /tmp/panic.txt --reproduce-only
 
 # Проверить полезность тестов (мутации)
-cargo run -- eval /проект --max-symbols 5
-cargo run -- eval ./tests/fixtures --suite
+tester eval /проект --max-symbols 5
+tester eval ./tests/fixtures --suite
 
 # UI e2e
-cargo run -- ui init /web-app
-cargo run -- ui doctor /web-app
-cargo run -- run /web-app --kind ui
+tester ui init /web-app
+tester ui doctor /web-app
+tester run /web-app --kind ui
 
 # Здоровье окружения
-cargo run -- doctor /проект
+tester doctor /проект
 ```
 
 Конфиг: `<корень>/tester.toml`. По умолчанию `--kind all`; `run` сразу пишет файлы (отключить: `--dry-run`).
@@ -55,8 +65,8 @@ cargo run -- doctor /проект
 Профиль проекта без обращения к модели: язык, пакет, команда тестов, фреймворки, capabilities, заметки.
 
 ```bash
-cargo run -- scan /путь-проекту
-cargo run -- scan /путь-проекту --format json
+tester scan /путь-проекту
+tester scan /путь-проекту --format json
 ```
 
 ### `plan`
@@ -64,9 +74,9 @@ cargo run -- scan /путь-проекту --format json
 Список целей для покрытия. Модель не вызывается.
 
 ```bash
-cargo run -- plan /путь-проекту --kind unit
-cargo run -- plan /путь-проекту --kind all --base main
-cargo run -- plan /путь-проекту --kind unit --bug "panic in multiply"
+tester plan /путь-проекту --kind unit
+tester plan /путь-проекту --kind all --base main
+tester plan /путь-проекту --kind unit --bug "panic in multiply"
 ```
 
 | Флаг                | Описание                                                      |
@@ -83,10 +93,10 @@ cargo run -- plan /путь-проекту --kind unit --bug "panic in multiply"
 Сгенерировать черновики через LLM. По умолчанию файлы не пишутся - печатается diff. Для записи нужен `--write`.
 
 ```bash
-cargo run -- generate /путь-проекту --kind unit
-cargo run -- generate /путь-проекту --kind unit --write
-cargo run -- generate /путь-проекту --kind unit --write --update
-cargo run -- generate /путь-проекту --kind unit --append --write
+tester generate /путь-проекту --kind unit
+tester generate /путь-проекту --kind unit --write
+tester generate /путь-проекту --kind unit --write --update
+tester generate /путь-проекту --kind unit --append --write
 ```
 
 | Флаг                                                               | Описание                                                                           |
@@ -100,9 +110,9 @@ cargo run -- generate /путь-проекту --kind unit --append --write
 Полный цикл: план -> генерация -> запись -> прогон -> repair при падении (до `repair_attempts`).
 
 ```bash
-cargo run -- run /путь-проекту
-cargo run -- run /путь-проекту --kind ui
-cargo run -- run /путь-проекту --dry-run
+tester run /путь-проекту
+tester run /путь-проекту --kind ui
+tester run /путь-проекту --dry-run
 ```
 
 Флаги как у `generate`, но запись включена по умолчанию; `--dry-run` - только diff без записи и прогона.
@@ -112,7 +122,7 @@ cargo run -- run /путь-проекту --dry-run
 Продолжить починку последнего неуспешного черновика (состояние в `.tester/` проекта).
 
 ```bash
-cargo run -- repair /путь-проекту
+tester repair /путь-проекту
 ```
 
 ### `eval`
@@ -120,9 +130,9 @@ cargo run -- repair /путь-проекту
 Мутации покрытых символов (arithmetic / boolean / off-by-one / branch / null). Модель не нужна.
 
 ```bash
-cargo run -- eval /путь-проекту --max-symbols 5
-cargo run -- eval /путь-к/fixtures --suite
-cargo run -- eval /путь-проекту --json
+tester eval /путь-проекту --max-symbols 5
+tester eval /путь-к/fixtures --suite
+tester eval /путь-проекту --json
 ```
 
 ### `debug`
@@ -130,9 +140,9 @@ cargo run -- eval /путь-проекту --json
 От traceback -> минимальный воспроизводящий тест -> validate/repair.
 
 ```bash
-cargo run -- debug /проект --bug "panic in multiply at src/lib.rs:10"
-cargo run -- debug /проект --bug-file ./fail.log --reproduce-only
-echo "$TRACE" | cargo run -- debug /проект --stdin --reproduce-only
+tester debug /проект --bug "panic in multiply at src/lib.rs:10"
+tester debug /проект --bug-file ./fail.log --reproduce-only
+echo "$TRACE" | tester debug /проект --stdin --reproduce-only
 ```
 
 ### `doctor` / `ui doctor`
@@ -140,16 +150,16 @@ echo "$TRACE" | cargo run -- debug /проект --stdin --reproduce-only
 Проверка LLM, toolchain, UI runner, android/docker.
 
 ```bash
-cargo run -- doctor /проект
-cargo run -- ui doctor /web-app
+tester doctor /проект
+tester ui doctor /web-app
 ```
 
 ### `plan --show` / `plan --apply`
 
 ```bash
-cargo run -- plan /проект --kind unit --max-items 10 --coverage lcov.info
-cargo run -- plan /проект --show
-cargo run -- plan /проект --apply
+tester plan /проект --kind unit --max-items 10 --coverage lcov.info
+tester plan /проект --show
+tester plan /проект --apply
 ```
 
 ### `agent` / `chat`
@@ -157,9 +167,9 @@ cargo run -- plan /проект --apply
 Консольный агент с tool-calling loop (scan/plan/write_test/run_tests/repair + fs/git).
 
 ```bash
-cargo run -- agent /путь-проекту "добавь unit-тесты на multiply"
-cargo run -- agent /путь-проекту "исправь упавшие тесты" --resume --dry-run
-cargo run -- chat /путь-проекту
+tester agent /путь-проекту "добавь unit-тесты на multiply"
+tester agent /путь-проекту "исправь упавшие тесты" --resume --dry-run
+tester chat /путь-проекту
 ```
 
 | Флаг          | Описание                                    |
@@ -176,9 +186,9 @@ cargo run -- chat /путь-проекту
 Интерактивный терминальный UI (каркас). Нужен TTY. `q` / Esc - выход. Fallback: `--plain` -> `chat` (нужен PATH).
 
 ```bash
-cargo run -- tui
-cargo run -- tui /путь-проекту --dry-run
-cargo run -- tui /путь-проекту --plain
+tester tui
+tester tui /путь-проекту --dry-run
+tester tui /путь-проекту --plain
 ```
 
 | Флаг        | Описание                            |
@@ -192,8 +202,8 @@ cargo run -- tui /путь-проекту --plain
 Минимальный Playwright: `playwright.config.ts`, каталог `e2e/`, запись секции UI в `tester.toml` (если файла ещё нет), `npm install` + chromium по возможности.
 
 ```bash
-cargo run -- ui init /path/to/web-app
-cargo run -- run /path/to/web-app --kind ui
+tester ui init /path/to/web-app
+tester run /path/to/web-app --kind ui
 ```
 
 ### `cpp init`
@@ -201,8 +211,8 @@ cargo run -- run /path/to/web-app --kind ui
 Каркас CMake + GoogleTest (`tests/`), минимальный `src/add.cpp`.
 
 ```bash
-cargo run -- cpp init /path/to/cpp-app
-cargo run -- run /path/to/cpp-app --kind unit
+tester cpp init /path/to/cpp-app
+tester run /path/to/cpp-app --kind unit
 ```
 
 ## Конфиг `tester.toml`
@@ -215,17 +225,7 @@ api_key = ""
 max_tokens = 4096
 timeout_secs = 120
 
-[tests.unit]
-enabled = true
-
-[tests.integration]
-enabled = true
-
-[tests.contract]
-enabled = true
-
 [tests.ui]
-enabled = false
 framework = "playwright"
 base_url = "http://127.0.0.1:3000"
 start = "python3 -m http.server 3000"
@@ -251,18 +251,19 @@ agent_auto_approve = false
 | `api_key`      | нет                        | Ключ API (только из файла, не из env) |
 | `max_tokens`   | `4096`                     | Лимит токенов ответа                  |
 | `timeout_secs` | `120`                      | Таймаут запроса к модели              |
+### `[tests.ui]`
 
-### `[tests.*]`
+| Key                  | Default                 | Description                                             |
+| -------------------- | ----------------------- | ------------------------------------------------------- |
+| `tests.ui.framework` | `playwright`            | UI framework                                            |
+| `tests.ui.base_url`  | `http://127.0.0.1:3000` | Playwright baseURL                                      |
+| `tests.ui.start`     | none                    | Shell command to start a local server before the UI run |
 
-| Ключ                        | По умолчанию            | Описание                                                  |
-| --------------------------- | ----------------------- | --------------------------------------------------------- |
-| `tests.unit.enabled`        | `true`                  | Учитывать unit-цели                                       |
-| `tests.integration.enabled` | `true`                  | Учитывать integration-цели                                |
-| `tests.contract.enabled`    | `true`                  | Учитывать contract-цели                                   |
-| `tests.ui.enabled`          | `false`                 | UI-цели (для `run --kind ui` включается автоматически)    |
-| `tests.ui.framework`        | `playwright`            | UI-фреймворк                                              |
-| `tests.ui.base_url`         | `http://127.0.0.1:3000` | baseURL для Playwright                                    |
-| `tests.ui.start`            | нет                     | Shell-команда старта локального сервера перед UI-прогоном |
+All kinds (unit, integration, UI, contract) are always enabled; filter with `--kind`.
+:3000` | baseURL для Playwright                                    |
+| `tests.ui.start`     | нет                     | Shell-команда старта локального сервера перед UI-прогоном |
+
+Все kinds (unit, integration, UI, contract) всегда включены; фильтр - через `--kind`.
 
 ### `[run]`
 

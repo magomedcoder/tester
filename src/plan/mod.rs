@@ -207,10 +207,6 @@ pub fn build_plan_with(
                 continue;
             }
         }
-        if kind == TestKind::All && !config.kind_enabled(gap.kind) {
-            continue;
-        }
-
         if kind != TestKind::All && kind != TestKind::Ui && gap.kind != kind && kinds.len() == 1 {
             continue;
         }

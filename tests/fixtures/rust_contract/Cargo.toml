@@ -1,0 +1,8 @@
+[package]
+name = "fixture_rust_contract"
+version = "0.1.0"
+edition = "2021"
+[dependencies]
+axum = "0.7"
+[lib]
+path = "src/lib.rs"
