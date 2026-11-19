@@ -1,0 +1,29 @@
+[llm]
+base_url = "http://127.0.0.1:11434/v1"
+model = ""
+api_key = ""
+max_tokens = 4096
+timeout_secs = 180
+
+[tests.unit]
+enabled = true
+
+[tests.integration]
+enabled = true
+
+[tests.contract]
+enabled = true
+
+[tests.ui]
+enabled = false
+
+[run]
+repair_attempts = 3
+timeout_secs = 120
+allow_docker = false
+max_context_chars = 24000
+android_opt_in = false
+max_agent_turns = 20
+max_tool_calls = 40
+agent_deadline_secs = 600
+agent_auto_approve = false
