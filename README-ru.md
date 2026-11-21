@@ -183,7 +183,7 @@ tester chat /путь-проекту
 
 ### `tui`
 
-Интерактивный терминальный UI (каркас). Нужен TTY. `q` / Esc - выход. Fallback: `--plain` -> `chat` (нужен PATH).
+Интерактивный терминальный UI. Нужен TTY. Без `PATH` открывает picker проекта/папки. Fallback: `--plain` -> `chat` (нужен PATH).
 
 ```bash
 tester tui
@@ -197,6 +197,8 @@ tester tui /путь-проекту --plain
 | `--resume`  | Зарезервировано под resume сессии   |
 | `--plain`   | Классический `chat` REPL вместо TUI |
 
+Клавиши: `Ctrl+O` picker  `↑↓` навигация  `Enter` открыть папку  `Ctrl+Enter` / `Ctrl+S` выбрать  набор фильтра  `Esc` назад  `q` выход. Recents: `~/.local/share/.tester/recents.json`.
+
 ### `ui init`
 
 Минимальный Playwright: `playwright.config.ts`, каталог `e2e/`, запись секции UI в `tester.toml` (если файла ещё нет), `npm install` + chromium по возможности.
@@ -204,15 +206,6 @@ tester tui /путь-проекту --plain
 ```bash
 tester ui init /path/to/web-app
 tester run /path/to/web-app --kind ui
-```
-
-### `cpp init`
-
-Каркас CMake + GoogleTest (`tests/`), минимальный `src/add.cpp`.
-
-```bash
-tester cpp init /path/to/cpp-app
-tester run /path/to/cpp-app --kind unit
 ```
 
 ## Конфиг `tester.toml`
@@ -280,7 +273,7 @@ All kinds (unit, integration, UI, contract) are always enabled; filter with `--k
 | `agent_auto_approve`  | `false`      | Auto-approve write/shell в `agent`/`chat`    |
 
 Нужен для: `generate`, `run`, `repair`, `agent`, `chat`.  
-Не нужен для: `scan`, `plan`, `eval`, `ui init`, `cpp init`.
+Не нужен для: `scan`, `plan`, `eval`, `ui init`.
 
 ## Коды выхода
 

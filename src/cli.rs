@@ -189,20 +189,12 @@ pub enum Commands {
 
     #[command(subcommand)]
     Ui(UiCommands),
-
-    #[command(subcommand)]
-    Cpp(CppCommands),
 }
 
 #[derive(Debug, Subcommand)]
 pub enum UiCommands {
     Init { path: PathBuf },
     Doctor { path: PathBuf },
-}
-
-#[derive(Debug, Subcommand)]
-pub enum CppCommands {
-    Init { path: PathBuf },
 }
 
 pub fn run() -> StdExitCode {
@@ -365,7 +357,6 @@ fn run_cli(cli: Cli) -> Result<ExitCode> {
         Commands::Doctor { path } => cmd_doctor(&path, format),
         Commands::Ui(UiCommands::Init { path }) => cmd_ui_init(&path, format),
         Commands::Ui(UiCommands::Doctor { path }) => cmd_ui_doctor(&path, format),
-        Commands::Cpp(CppCommands::Init { path }) => cmd_cpp_init(&path, format),
     }
 }
 
@@ -806,35 +797,6 @@ fn cmd_repair(path: &PathBuf, format: OutputFormat) -> Result<ExitCode> {
     };
     emit_report(&profile, &report, format)?;
     Ok(ExitCode(exit_for(&report) as u8))
-}
-
-fn cmd_cpp_init(path: &PathBuf, format: OutputFormat) -> Result<ExitCode> {
-    std::fs::create_dir_all(path)?;
-    crate::adapter::ensure_cpp_scaffold(path)?;
-
-    let src = path.join("src");
-    std::fs::create_dir_all(&src)?;
-    let main_cc = src.join("add.cpp");
-    if !main_cc.exists() {
-        write_bytes(&main_cc, b"int add(int a, int b) { return a + b; }\n")?;
-    }
-    let hdr = path.join("include");
-    std::fs::create_dir_all(&hdr)?;
-    let add_h = hdr.join("add.h");
-    if !add_h.exists() {
-        write_bytes(&add_h, b"#pragma once\nint add(int a, int b);\n")?;
-    }
-    match format {
-        OutputFormat::Json => println!(
-            "{}",
-            serde_json::json!({"ok": true, "root": path, "hint": "tester run . --kind unit"})
-        ),
-        OutputFormat::Text => {
-            println!("C++ каркас инициализирован в {}", path.display());
-            println!("далее: cargo run -- run {} --kind unit", path.display());
-        }
-    }
-    Ok(ExitCode::OK)
 }
 
 fn cmd_ui_init(path: &PathBuf, format: OutputFormat) -> Result<ExitCode> {

@@ -111,10 +111,6 @@ pub fn ensure_scaffold(profile: &ProjectProfile) -> Result<()> {
     }
 }
 
-pub fn ensure_cpp_scaffold(root: &Path) -> Result<()> {
-    cpp::ensure_scaffold(root)
-}
-
 pub fn discover(root: &Path) -> Result<ProjectProfile> {
     let lang = detect_language(root);
     if lang == Language::Unknown {

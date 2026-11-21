@@ -152,16 +152,7 @@ Check LLM, toolchain, UI runner, android/docker.
 ```bash
 tester doctor /project
 tester ui doctor /web-app
-```
-
-### `plan --show` / `plan --apply`
-
-```bash
-tester plan /project --kind unit --max-items 10 --coverage lcov.info
-tester plan /project --show
-tester plan /project --apply
-```
-
+```cargo build
 ### `agent` / `chat`
 
 Console agent with a tool-calling loop (scan/plan/write_test/run_tests/repair + fs/git).
@@ -183,7 +174,7 @@ In `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/config`, `/clear`, `/audi
 
 ### `tui`
 
-Interactive terminal UI (scaffold). Requires a TTY. `q` / Esc quit. Fallback: `--plain` -> `chat` (PATH required).
+Interactive terminal UI. Requires a TTY. Without `PATH`, opens the project/folder picker. Fallback: `--plain` -> `chat` (PATH required).
 
 ```bash
 tester tui
@@ -197,6 +188,8 @@ tester tui /path/to/project --plain
 | `--resume`  | Reserved for session resume                     |
 | `--plain`   | Use classic `chat` REPL instead of TUI          |
 
+Keybinds: `Ctrl+O` open project picker  `↑↓` navigate  `Enter` open folder  `Ctrl+Enter` / `Ctrl+S` select  type to filter  `Esc` back  `q` quit. Recents: `~/.local/share/.tester/recents.json`.
+
 ### `ui init`
 
 Minimal Playwright setup: `playwright.config.ts`, `e2e/` directory, UI section in `tester.toml` (if the file does not exist yet), `npm install` + chromium when possible.
@@ -204,15 +197,6 @@ Minimal Playwright setup: `playwright.config.ts`, `e2e/` directory, UI section i
 ```bash
 tester ui init /path/to/web-app
 tester run /path/to/web-app --kind ui
-```
-
-### `cpp init`
-
-CMake + GoogleTest scaffold (`tests/`), minimal `src/add.cpp`.
-
-```bash
-tester cpp init /path/to/cpp-app
-tester run /path/to/cpp-app --kind unit
 ```
 
 ## Config `tester.toml`
@@ -277,7 +261,7 @@ All kinds (unit, integration, UI, contract) are always enabled; filter with `--k
 | `agent_auto_approve`  | `false` | Auto-approve write/shell in `agent`/`chat`   |
 
 Required for: `generate`, `run`, `repair`, `agent`, `chat`.  
-Not required for: `scan`, `plan`, `eval`, `ui init`, `cpp init`.
+Not required for: `scan`, `plan`, `eval`, `ui init`.
 
 ## Exit codes
 

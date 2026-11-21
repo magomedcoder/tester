@@ -179,23 +179,6 @@ fn scan_fixtures_dir() {
 }
 
 #[test]
-fn cpp_init_creates_scaffold() {
-    let dir = tempfile::tempdir().unwrap();
-    let target = dir.path().join("app");
-    let out = Command::new(bin())
-        .args(["cpp", "init", target.to_str().unwrap()])
-        .output()
-        .unwrap();
-    assert!(
-        out.status.success(),
-        "{}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    assert!(target.join("CMakeLists.txt").exists());
-    assert!(target.join("tests").is_dir());
-}
-
-#[test]
 fn help_lists_agent_and_chat() {
     let out = Command::new(bin()).args(["--help"]).output().unwrap();
     let stdout = String::from_utf8_lossy(&out.stdout);

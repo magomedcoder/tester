@@ -35,9 +35,15 @@ pub fn draw(frame: &mut Frame<'_>, app: &App) {
 
     match &app.screen {
         Screen::Home(home) => home.draw(frame, chunks[1]),
+        Screen::Picker(picker) => picker.draw(frame, chunks[1]),
     }
 
-    let footer = Paragraph::new(" q/Esc quit ")
-        .block(Block::default().borders(Borders::TOP));
+    let footer_text = match &app.screen {
+        Screen::Home(_) => " Ctrl+O open project    q/Esc quit ",
+        Screen::Picker(_) => {
+            " ↑↓  Enter open    Ctrl+Enter/Ctrl+S select    Esc back    type to filter "
+        }
+    };
+    let footer = Paragraph::new(footer_text).block(Block::default().borders(Borders::TOP));
     frame.render_widget(footer, chunks[2]);
 }
