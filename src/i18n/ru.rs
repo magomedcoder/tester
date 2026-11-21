@@ -31,10 +31,10 @@ pub fn t(msg: Msg) -> &'static str {
         }
         Msg::FooterHome => " Enter сессия    Ctrl+O проект    q выход ",
         Msg::FooterPicker => {
-            " ↑↓  Enter открыть    Ctrl+Enter/Ctrl+S выбрать    Esc назад    фильтр "
+            " ↑↓  Enter открыть    Ctrl+Enter/Ctrl+S выбрать    -> worktrees    Esc назад    фильтр "
         }
         Msg::FooterSession => {
-            " Enter отправить    Ctrl+J строка    /команды    Esc отмена/выход    Ctrl+O проект "
+            " Enter отправить    @файл    /команды    y/N approve    Esc отмена/выход    Ctrl+O проект "
         }
         Msg::TitleHome => " главная ",
         Msg::TitleFolders => " папки ",
@@ -44,6 +44,9 @@ pub fn t(msg: Msg) -> &'static str {
         Msg::TitleCommands => " /команды ",
         Msg::TitleSession => " сессия ",
         Msg::TitleOpenProject => " открыть проект ",
+        Msg::TitleAttach => " вложения ",
+        Msg::TitleFiles => " @файлы ",
+        Msg::TitleWorktrees => " worktrees ",
         Msg::NoProject => "(проект не выбран)",
         Msg::ProjectLabel => "Проект",
         Msg::HomeHint => "Откройте проект, чтобы начать сессию.",
@@ -53,22 +56,26 @@ pub fn t(msg: Msg) -> &'static str {
         Msg::DiscoverFailed => "discover не удался",
         Msg::PickerStatusProject => "корень проекта - Ctrl+Enter / Ctrl+S открыть",
         Msg::PickerStatusNav => {
-            "↑↓ навигация  Enter папка  Ctrl+Enter выбрать  Esc отмена  фильтр"
+            "↑↓ навигация  Enter папка  -> worktrees  Ctrl+Enter выбрать  Esc отмена"
+        }
+        Msg::PickerStatusWorktrees => {
+            "worktrees - Enter/Ctrl+Enter открыть  <- к папкам  Esc отмена"
         }
         Msg::PickerFilter => "фильтр",
         Msg::PickerProjectTag => "[проект]",
+        Msg::PickerWorktreeTag => "[worktree]",
         Msg::SessionFailedOpen => "не удалось открыть проект",
         Msg::SessionFixHint => "исправьте проект / конфиг, затем Ctrl+O",
-        Msg::SessionStatusDryRun => "dry-run  Enter отправить  Ctrl+J строка  /help",
-        Msg::SessionStatusAuto => "auto-approve  Enter отправить  /help",
+        Msg::SessionStatusDryRun => "dry-run  Enter отправить  @файл  /help",
+        Msg::SessionStatusAuto => "auto-approve  Enter отправить  @файл  /help",
         Msg::SessionStatusBlocked => {
-            "запись заблокирована (agent_auto_approve или --dry-run)  Enter  /help"
+            "write/shell требуют y/N  Enter отправить  @файл  /help"
         }
         Msg::SessionCleared => "сессия очищена",
         Msg::SessionRunning => "выполняется... Esc отмена",
         Msg::SessionCancelReq => "запрошена отмена...",
         Msg::SessionHelp => {
-            "команды: /scan /plan [kind] /run <prompt> /config /clear /audit /exit"
+            "команды: /scan /plan [kind] /run <prompt> /config /clear /audit /exit  вложение @path или @path#L20-45"
         }
         Msg::SessionUnknownCmd => "неизвестная команда; /help",
         Msg::SessionUsageRun => "usage: /run <prompt>",
@@ -83,5 +90,26 @@ pub fn t(msg: Msg) -> &'static str {
         Msg::RoleSystem => "система",
         Msg::SupportedWord => "поддерживается",
         Msg::UnsupportedWord => "не поддерживается",
+        Msg::PermTitle => " разрешить tool? ",
+        Msg::PermHint => "y / Enter = да    n / Esc = нет",
+        Msg::PermPrompt => "нужно разрешение - y/n",
+        Msg::DoctorTitle => "# tester doctor\n\n",
+        Msg::DoctorOk => "ok",
+        Msg::DoctorFail => "FAIL",
+        Msg::ReportTitle => "# Отчёт tester\n\n",
+        Msg::ReportProject => "проект",
+        Msg::ReportLanguage => "язык",
+        Msg::ReportPackage => "пакет",
+        Msg::ReportWarnings => "## Предупреждения\n\n",
+        Msg::ReportFailures => "## Сводка failures\n\n",
+        Msg::ReportResults => "## Результаты\n\n| символ | вид | файл | попытки | статус | first_pass | density | полезность | команда |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n",
+        Msg::ReportTrace => "Трассировка",
+        Msg::ReportStatusPlanned => "запланирован",
+        Msg::ReportStatusDryRun => "сухой_прогон",
+        Msg::ReportStatusWritten => "записан",
+        Msg::ReportStatusPassed => "пройден",
+        Msg::ReportStatusUnfixed => "не_исправлен",
+        Msg::ReportStatusSkipped => "пропущен",
+        Msg::ReportStatusFailedPath => "отказ_пути",
     }
 }

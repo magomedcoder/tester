@@ -1,5 +1,6 @@
 use super::TuiOptions;
 use super::event::Event;
+use super::recents::Recents;
 use super::screens::home::{HomeAction, HomeScreen};
 use super::screens::picker::{PickerAction, PickerScreen};
 use super::screens::session::{SessionAction, SessionScreen};
@@ -26,6 +27,8 @@ impl App {
         };
         if let Some(path) = opts.path {
             app.set_project(path);
+        } else if let Some(last) = Recents::load().last_root.filter(|p| p.is_dir()) {
+            app.set_project(last);
         } else {
             app.screen = Screen::Picker(PickerScreen::new(None));
         }
@@ -33,6 +36,9 @@ impl App {
     }
 
     fn set_project(&mut self, path: PathBuf) {
+        let mut recents = Recents::load();
+        recents.push(&path);
+        let _ = recents.save();
         let session = SessionScreen::open(path, self.dry_run, self.resume);
         self.project = Some(session.root().to_path_buf());
         self.screen = Screen::Session(session);

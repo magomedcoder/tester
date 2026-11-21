@@ -14,11 +14,16 @@ pub struct DoctorReport {
 
 impl DoctorReport {
     pub fn render_text(&self) -> String {
-        let mut out = String::from("# tester doctor\n\n");
+        use crate::i18n::{self, Msg};
+        let mut out = String::from(i18n::t(Msg::DoctorTitle));
         for (name, ok, detail) in &self.checks {
             out.push_str(&format!(
                 "- {} {}: {}\n",
-                if *ok { "ok" } else { "FAIL" },
+                if *ok {
+                    i18n::t(Msg::DoctorOk)
+                } else {
+                    i18n::t(Msg::DoctorFail)
+                },
                 name,
                 detail
             ));

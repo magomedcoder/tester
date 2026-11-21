@@ -199,9 +199,11 @@ tester tui /путь-проекту --plain
 | `--resume`  | Загрузить `.tester/session.json` в transcript |
 | `--plain`   | Классический `chat` REPL вместо TUI           |
 
-Picker: `Ctrl+O`  `↑↓`  `Enter` папка  `Ctrl+Enter` / `Ctrl+S` выбрать  фильтр  `Esc` назад. Recents: `~/.local/share/.tester/recents.json`.
+Picker: `Ctrl+O`  `↑↓`  `Enter` папка  `->` git worktrees  `Ctrl+Enter` / `Ctrl+S` выбрать  фильтр  `Esc` назад. Recents / последний проект: `~/.local/share/.tester/recents.json` (`tester tui` без PATH открывает `last_root`, если есть).
 
-Session: `Enter` отправить  `Ctrl+J` новая строка  `/scan` `/plan` `/run` `/config` `/clear` `/audit` `/exit`  `Esc` отмена/выход. Без `agent_auto_approve` (и не `--dry-run`) write/shell блокируются до modal confirm.
+Session: `Enter` отправить  `Ctrl+J` новая строка  `@path` / `@path#L20-45` вложение  `/scan` `/plan` `/run` `/config` `/clear` `/audit` `/exit`  `Esc` отмена/выход. Ответы стримятся в transcript. Без `agent_auto_approve` (и не `--dry-run`) write/shell показывают modal **y/N**.
+
+Пример: открыть проект -> `@src/lib.rs` (Tab) -> промпт -> подтвердить запись `y`.
 
 ### `ui init`
 

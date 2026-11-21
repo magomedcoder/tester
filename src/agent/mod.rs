@@ -11,9 +11,9 @@ pub mod tools;
 #[cfg(test)]
 mod tests;
 
-pub use agent_loop::{AgentLoop, AgentOptions, AgentOutcome};
+pub use agent_loop::{AgentLoop, AgentOptions, AgentOutcome, OnDelta};
 pub use audit::AuditLog;
-pub use permissions::{PermissionMode, PermissionPolicy};
+pub use permissions::{ConfirmFn, PermissionMode, PermissionPolicy};
 pub use progress::Progress;
 pub use repl::run_repl;
 pub use session::{AgentSession, clear_session, load_session, save_session};
@@ -83,7 +83,27 @@ pub fn open_context_with_policy(
 }
 
 pub fn run_one_shot(ctx: &AgentContext, prompt: &str, resume: bool) -> Result<AgentOutcome> {
-    let mut session = if resume {
+    run_one_shot_ex(
+        ctx,
+        prompt,
+        RunOneShotOpts {
+            resume,
+            on_delta: None,
+        },
+    )
+}
+
+pub struct RunOneShotOpts {
+    pub resume: bool,
+    pub on_delta: Option<OnDelta>,
+}
+
+pub fn run_one_shot_ex(
+    ctx: &AgentContext,
+    prompt: &str,
+    run_opts: RunOneShotOpts,
+) -> Result<AgentOutcome> {
+    let mut session = if run_opts.resume {
         load_session(&ctx.profile.root).unwrap_or_else(|_| AgentSession::new())
     } else {
         AgentSession::new()
@@ -102,7 +122,8 @@ pub fn run_one_shot(ctx: &AgentContext, prompt: &str, resume: bool) -> Result<Ag
         max_turns: ctx.config.run.max_agent_turns,
         max_tool_calls: ctx.config.run.max_tool_calls,
         deadline_secs: ctx.config.run.agent_deadline_secs,
-        stream: ctx.stream,
+        stream: ctx.stream || run_opts.on_delta.is_some(),
+        on_delta: run_opts.on_delta,
     };
     let registry = tools::default_registry(ctx);
     let mut engine = AgentLoop::new(ctx, registry, opts);

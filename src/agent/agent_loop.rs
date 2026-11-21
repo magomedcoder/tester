@@ -9,12 +9,27 @@ use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 use tracing::{info, warn};
 
-#[derive(Debug, Clone)]
+pub type OnDelta = std::sync::Arc<dyn Fn(&str) + Send + Sync>;
+
+#[derive(Clone)]
 pub struct AgentOptions {
     pub max_turns: u32,
     pub max_tool_calls: u32,
     pub deadline_secs: u64,
     pub stream: bool,
+    pub on_delta: Option<OnDelta>,
+}
+
+impl std::fmt::Debug for AgentOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AgentOptions")
+            .field("max_turns", &self.max_turns)
+            .field("max_tool_calls", &self.max_tool_calls)
+            .field("deadline_secs", &self.deadline_secs)
+            .field("stream", &self.stream)
+            .field("on_delta", &self.on_delta.as_ref().map(|_| "Some(..)"))
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -68,19 +83,25 @@ impl<'a> AgentLoop<'a> {
             session.turns = session.turns.saturating_add(1);
 
             let tools = self.registry.specs();
-            let on_delta: Option<&dyn Fn(&str)> = if self.opts.stream {
-                Some(&|delta: &str| {
-                    print!("{delta}");
-                    let _ = std::io::Write::flush(&mut std::io::stdout());
-                })
-            } else {
-                None
-            };
-
-            let result = self.ctx.llm.chat(&session.messages, &tools, on_delta)?;
-            if self.opts.stream {
+            let result = if let Some(cb) = &self.opts.on_delta {
+                let cb = std::sync::Arc::clone(cb);
+                self.ctx
+                    .llm
+                    .chat(&session.messages, &tools, Some(&|delta: &str| cb(delta)))?
+            } else if self.opts.stream {
+                let result = self.ctx.llm.chat(
+                    &session.messages,
+                    &tools,
+                    Some(&|delta: &str| {
+                        print!("{delta}");
+                        let _ = std::io::Write::flush(&mut std::io::stdout());
+                    }),
+                )?;
                 println!();
-            }
+                result
+            } else {
+                self.ctx.llm.chat(&session.messages, &tools, None)?
+            };
             if let Some(u) = &result.usage {
                 session.usage.add_assign(u);
             }

@@ -190,9 +190,11 @@ tester tui /path/to/project --plain
 | `--resume`  | Load `.tester/session.json` into the transcript        |
 | `--plain`   | Use classic `chat` REPL instead of TUI                 |
 
-Picker: `Ctrl+O`  `↑↓`  `Enter` open folder  `Ctrl+Enter` / `Ctrl+S` select  type to filter  `Esc` back. Recents: `~/.local/share/.tester/recents.json`.
+Picker: `Ctrl+O`  `↑↓`  `Enter` open folder  `->` git worktrees  `Ctrl+Enter` / `Ctrl+S` select  type to filter  `Esc` back. Recents / last project: `~/.local/share/.tester/recents.json` (`tester tui` without PATH resumes `last_root` when set).
 
-Session: `Enter` send  `Ctrl+J` newline  `/scan` `/plan` `/run` `/config` `/clear` `/audit` `/exit`  `Esc` cancel run / quit. Without `agent_auto_approve` (and not `--dry-run`), write/shell tools are blocked until confirm modals land.
+Session: `Enter` send  `Ctrl+J` newline  `@path` / `@path#L20-45` attach  `/scan` `/plan` `/run` `/config` `/clear` `/audit` `/exit`  `Esc` cancel run / quit. Streaming replies appear in the transcript. Without `agent_auto_approve` (and not `--dry-run`), write/shell tools open a **y/N** modal.
+
+Example: open project -> type `@src/lib.rs` (Tab to complete) -> prompt -> approve write with `y`.
 
 ### `ui init`
 

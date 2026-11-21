@@ -1,5 +1,6 @@
 mod app;
 mod event;
+mod files;
 mod recents;
 mod screens;
 mod ui;

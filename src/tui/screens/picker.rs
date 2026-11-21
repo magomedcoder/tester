@@ -8,6 +8,7 @@ use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 #[derive(Debug, Clone)]
 pub enum PickerAction {
@@ -21,6 +22,7 @@ enum Row {
     Recent(PathBuf),
     Parent,
     Dir(PathBuf, bool),
+    Worktree(PathBuf),
 }
 
 pub struct PickerScreen {
@@ -31,6 +33,7 @@ pub struct PickerScreen {
     recents: Recents,
     status: String,
     show_recents: bool,
+    worktree_mode: bool,
 }
 
 impl PickerScreen {
@@ -55,6 +58,7 @@ impl PickerScreen {
             recents: Recents::load(),
             status: String::new(),
             show_recents: true,
+            worktree_mode: false,
         };
         s.refresh_rows();
         s
@@ -62,7 +66,25 @@ impl PickerScreen {
 
     pub fn handle_key(&mut self, key: KeyEvent) -> PickerAction {
         match key.code {
-            KeyCode::Esc => return PickerAction::Cancel,
+            KeyCode::Esc => {
+                if self.worktree_mode {
+                    self.worktree_mode = false;
+                    self.refresh_rows();
+                    return PickerAction::None;
+                }
+                return PickerAction::Cancel;
+            }
+            KeyCode::Right => {
+                self.enter_worktree_mode();
+            }
+            KeyCode::Left => {
+                if self.worktree_mode {
+                    self.worktree_mode = false;
+                    self.refresh_rows();
+                } else {
+                    self.go_up();
+                }
+            }
             KeyCode::Up => {
                 if self.selected > 0 {
                     self.selected -= 1;
@@ -90,6 +112,9 @@ impl PickerScreen {
             KeyCode::Backspace => {
                 if !self.filter.is_empty() {
                     self.filter.pop();
+                    self.refresh_rows();
+                } else if self.worktree_mode {
+                    self.worktree_mode = false;
                     self.refresh_rows();
                 } else {
                     self.go_up();
@@ -119,12 +144,24 @@ impl PickerScreen {
         PickerAction::None
     }
 
+    fn enter_worktree_mode(&mut self) {
+        let trees = list_worktrees(&self.cwd);
+        if trees.is_empty() {
+            self.status = "no git worktrees".into();
+            return;
+        }
+        self.worktree_mode = true;
+        self.filter.clear();
+        self.show_recents = false;
+        self.refresh_rows();
+    }
+
     fn activate_selected(&mut self) -> PickerAction {
         let Some(row) = self.rows.get(self.selected).cloned() else {
             return self.select_path(self.cwd.clone());
         };
         match row {
-            Row::Recent(path) => self.select_path(path),
+            Row::Recent(path) | Row::Worktree(path) => self.select_path(path),
             Row::Parent => {
                 self.go_up();
                 PickerAction::None
@@ -138,7 +175,9 @@ impl PickerScreen {
 
     fn confirm_highlighted_or_cwd(&mut self) -> PickerAction {
         match self.rows.get(self.selected).cloned() {
-            Some(Row::Recent(path)) | Some(Row::Dir(path, _)) => self.select_path(path),
+            Some(Row::Recent(path)) | Some(Row::Dir(path, _)) | Some(Row::Worktree(path)) => {
+                self.select_path(path)
+            }
             _ => self.select_path(self.cwd.clone()),
         }
     }
@@ -171,6 +210,7 @@ impl PickerScreen {
             self.cwd = parent.to_path_buf();
             self.filter.clear();
             self.show_recents = false;
+            self.worktree_mode = false;
             self.refresh_rows();
         }
     }
@@ -179,12 +219,33 @@ impl PickerScreen {
         self.cwd = path;
         self.filter.clear();
         self.show_recents = false;
+        self.worktree_mode = false;
         self.refresh_rows();
     }
 
     fn refresh_rows(&mut self) {
         let filter = self.filter.to_lowercase();
         let mut rows = Vec::new();
+
+        if self.worktree_mode {
+            let mut trees = list_worktrees(&self.cwd);
+            if !filter.is_empty() {
+                trees.retain(|p| {
+                    p.to_string_lossy()
+                        .to_lowercase()
+                        .contains(&filter)
+                });
+            }
+            for p in trees {
+                rows.push(Row::Worktree(p));
+            }
+            self.rows = rows;
+            if self.selected >= self.rows.len() {
+                self.selected = self.rows.len().saturating_sub(1);
+            }
+            self.status = i18n::t(Msg::PickerStatusWorktrees).into();
+            return;
+        }
 
         if self.show_recents && filter.is_empty() {
             for p in &self.recents.paths {
@@ -242,11 +303,13 @@ impl PickerScreen {
         } else {
             format!("  {}: {}", i18n::t(Msg::PickerFilter), self.filter)
         };
+        let title = if self.worktree_mode {
+            i18n::t(Msg::TitleWorktrees)
+        } else {
+            i18n::t(Msg::TitleOpenProject)
+        };
         let header = Paragraph::new(Line::from(vec![
-            Span::styled(
-                i18n::t(Msg::TitleOpenProject),
-                Style::default().add_modifier(Modifier::BOLD),
-            ),
+            Span::styled(title, Style::default().add_modifier(Modifier::BOLD)),
             Span::raw(crumb),
             Span::raw(filter_line),
         ]))
@@ -265,6 +328,14 @@ impl PickerScreen {
                         Style::default().add_modifier(Modifier::ITALIC),
                     ),
                     Row::Parent => (format!("{mark} ../"), Style::default()),
+                    Row::Worktree(p) => (
+                        format!(
+                            "{mark} {}  {}",
+                            short_path(p),
+                            i18n::t(Msg::PickerWorktreeTag)
+                        ),
+                        Style::default().add_modifier(Modifier::BOLD),
+                    ),
                     Row::Dir(p, is_project) => {
                         let name = p
                             .file_name()
@@ -291,7 +362,11 @@ impl PickerScreen {
         let list = List::new(items).block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(i18n::t(Msg::TitleFolders)),
+                .title(if self.worktree_mode {
+                    i18n::t(Msg::TitleWorktrees)
+                } else {
+                    i18n::t(Msg::TitleFolders)
+                }),
         );
         frame.render_widget(list, chunks[1]);
 
@@ -326,6 +401,29 @@ fn list_dirs(cwd: &Path) -> Vec<PathBuf> {
                 && name != "__pycache__"
         })
         .collect()
+}
+
+pub fn list_worktrees(cwd: &Path) -> Vec<PathBuf> {
+    let output = Command::new("git")
+        .args(["-C", &cwd.to_string_lossy(), "worktree", "list", "--porcelain"])
+        .output();
+    let Ok(output) = output else {
+        return Vec::new();
+    };
+    if !output.status.success() {
+        return Vec::new();
+    }
+    let text = String::from_utf8_lossy(&output.stdout);
+    let mut out = Vec::new();
+    for line in text.lines() {
+        if let Some(path) = line.strip_prefix("worktree ") {
+            let p = PathBuf::from(path);
+            if p.is_dir() {
+                out.push(p);
+            }
+        }
+    }
+    out
 }
 
 pub fn breadcrumb(path: &Path) -> String {
@@ -373,5 +471,11 @@ mod tests {
         let dirs = list_dirs(dir.path());
         assert_eq!(dirs.len(), 1);
         assert!(dirs[0].ends_with("visible"));
+    }
+
+    #[test]
+    fn list_worktrees_empty_outside_git() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(list_worktrees(dir.path()).is_empty());
     }
 }

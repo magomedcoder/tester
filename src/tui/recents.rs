@@ -8,6 +8,8 @@ const MAX_RECENTS: usize = 20;
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Recents {
     pub paths: Vec<PathBuf>,
+    #[serde(default)]
+    pub last_root: Option<PathBuf>,
 }
 
 impl Recents {
@@ -43,7 +45,8 @@ impl Recents {
             .canonicalize()
             .unwrap_or_else(|_| root.to_path_buf());
         self.paths.retain(|p| p != &root);
-        self.paths.insert(0, root);
+        self.paths.insert(0, root.clone());
+        self.last_root = Some(root);
         if self.paths.len() > MAX_RECENTS {
             self.paths.truncate(MAX_RECENTS);
         }
@@ -51,6 +54,11 @@ impl Recents {
 
     pub fn prune_missing(&mut self) {
         self.paths.retain(|p| p.is_dir());
+        if let Some(last) = &self.last_root {
+            if !last.is_dir() {
+                self.last_root = None;
+            }
+        }
     }
 }
 
@@ -95,9 +103,21 @@ mod tests {
     fn prune_drops_missing() {
         let mut r = Recents {
             paths: vec![PathBuf::from("/no/such/tester/path/xyz")],
+            last_root: Some(PathBuf::from("/no/such/tester/path/xyz")),
         };
         r.prune_missing();
         assert!(r.paths.is_empty());
+        assert!(r.last_root.is_none());
+    }
+
+    #[test]
+    fn push_sets_last_root() {
+        let dir = tempfile::tempdir().unwrap();
+        let a = dir.path().join("a");
+        fs::create_dir_all(&a).unwrap();
+        let mut r = Recents::default();
+        r.push(&a);
+        assert_eq!(r.last_root.as_ref().unwrap(), &a.canonicalize().unwrap());
     }
 
     #[test]

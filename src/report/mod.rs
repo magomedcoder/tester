@@ -1,24 +1,37 @@
+use crate::i18n::{self, Msg};
 use crate::model::{ItemStatus, ProjectProfile, RunReport, TestKind};
 use serde_json::json;
 
-fn status_ru(status: ItemStatus) -> &'static str {
+fn status_label(status: ItemStatus) -> &'static str {
     match status {
-        ItemStatus::Planned => "запланирован",
-        ItemStatus::DryRun => "сухой_прогон",
-        ItemStatus::Written => "записан",
-        ItemStatus::Passed => "пройден",
-        ItemStatus::Unfixed => "не_исправлен",
-        ItemStatus::Skipped => "пропущен",
-        ItemStatus::FailedPath => "отказ_пути",
+        ItemStatus::Planned => i18n::t(Msg::ReportStatusPlanned),
+        ItemStatus::DryRun => i18n::t(Msg::ReportStatusDryRun),
+        ItemStatus::Written => i18n::t(Msg::ReportStatusWritten),
+        ItemStatus::Passed => i18n::t(Msg::ReportStatusPassed),
+        ItemStatus::Unfixed => i18n::t(Msg::ReportStatusUnfixed),
+        ItemStatus::Skipped => i18n::t(Msg::ReportStatusSkipped),
+        ItemStatus::FailedPath => i18n::t(Msg::ReportStatusFailedPath),
     }
 }
 
 pub fn render_markdown(profile: &ProjectProfile, report: &RunReport) -> String {
     let mut out = String::new();
-    out.push_str("# Отчёт tester\n\n");
-    out.push_str(&format!("- проект: `{}`\n", profile.root.display()));
-    out.push_str(&format!("- язык: {}\n", profile.language.as_str()));
-    out.push_str(&format!("- пакет: {}\n", profile.package_name));
+    out.push_str(i18n::t(Msg::ReportTitle));
+    out.push_str(&format!(
+        "- {}: `{}`\n",
+        i18n::t(Msg::ReportProject),
+        profile.root.display()
+    ));
+    out.push_str(&format!(
+        "- {}: {}\n",
+        i18n::t(Msg::ReportLanguage),
+        profile.language.as_str()
+    ));
+    out.push_str(&format!(
+        "- {}: {}\n",
+        i18n::t(Msg::ReportPackage),
+        profile.package_name
+    ));
     if let Some(r) = report.metrics.unit_first_pass_rate {
         out.push_str(&format!("- unit_first_pass_rate: {:.0}%\n", r * 100.0));
     }
@@ -28,7 +41,7 @@ pub fn render_markdown(profile: &ProjectProfile, report: &RunReport) -> String {
     out.push('\n');
 
     if !report.warnings.is_empty() {
-        out.push_str("## Предупреждения\n\n");
+        out.push_str(i18n::t(Msg::ReportWarnings));
         for w in &report.warnings {
             out.push_str(&format!("- {w}\n"));
         }
@@ -52,16 +65,11 @@ pub fn render_markdown(profile: &ProjectProfile, report: &RunReport) -> String {
         })
         .count();
     if unit_fail + int_fail > 0 {
-        out.push_str(&format!(
-            "## Сводка failures\n\n- unit: {unit_fail}\n- integration: {int_fail}\n\n"
-        ));
+        out.push_str(i18n::t(Msg::ReportFailures));
+        out.push_str(&format!("- unit: {unit_fail}\n- integration: {int_fail}\n\n"));
     }
 
-    out.push_str("## Результаты\n\n");
-    out.push_str(
-        "| символ | вид | файл | попытки | статус | first_pass | density | полезность | команда |\n",
-    );
-    out.push_str("| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+    out.push_str(i18n::t(Msg::ReportResults));
     for item in &report.items {
         out.push_str(&format!(
             "| {} | {} | {} | {} | {} | {} | {} | {} | `{}` |\n",
@@ -69,7 +77,7 @@ pub fn render_markdown(profile: &ProjectProfile, report: &RunReport) -> String {
             item.kind.as_str(),
             item.file.display(),
             item.attempts,
-            status_ru(item.status),
+            status_label(item.status),
             item.first_pass
                 .map(|b| if b { "yes" } else { "no" })
                 .unwrap_or("-"),
@@ -92,7 +100,7 @@ pub fn render_markdown(profile: &ProjectProfile, report: &RunReport) -> String {
             out.push_str(&format!(
                 "### {} ({})\n\n",
                 item.symbol,
-                status_ru(item.status)
+                status_label(item.status)
             ));
             out.push_str("```\n");
             out.push_str(&item.message);
@@ -102,7 +110,11 @@ pub fn render_markdown(profile: &ProjectProfile, report: &RunReport) -> String {
             out.push_str("```\n\n");
         }
         if let Some(trace) = &item.trace_path {
-            out.push_str(&format!("Трассировка: `{}`\n\n", trace.display()));
+            out.push_str(&format!(
+                "{}: `{}`\n\n",
+                i18n::t(Msg::ReportTrace),
+                trace.display()
+            ));
         }
     }
     out

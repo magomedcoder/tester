@@ -63,6 +63,7 @@ fn agent_loop_ends_on_text_without_tools() {
             max_tool_calls: 10,
             deadline_secs: 30,
             stream: false,
+            on_delta: None,
         },
     );
     let out = engine.run(&mut session).unwrap();
@@ -123,6 +124,7 @@ fn agent_loop_executes_tool_then_finishes() {
             max_tool_calls: 10,
             deadline_secs: 30,
             stream: false,
+            on_delta: None,
         },
     );
     let out = engine.run(&mut session).unwrap();
@@ -177,6 +179,7 @@ fn tool_error_becomes_tool_result_not_panic() {
             max_tool_calls: 10,
             deadline_secs: 30,
             stream: false,
+            on_delta: None,
         },
     );
     let out = engine.run(&mut session).unwrap();

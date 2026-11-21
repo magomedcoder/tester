@@ -31,10 +31,10 @@ pub fn t(msg: Msg) -> &'static str {
         }
         Msg::FooterHome => " Enter session    Ctrl+O project    q quit ",
         Msg::FooterPicker => {
-            " ↑↓  Enter open    Ctrl+Enter/Ctrl+S select    Esc back    type to filter "
+            " ↑↓  Enter open    Ctrl+Enter/Ctrl+S select    -> worktrees    Esc back    type to filter "
         }
         Msg::FooterSession => {
-            " Enter send    Ctrl+J newline    /commands    Esc cancel/quit    Ctrl+O project "
+            " Enter send    @file    /commands    y/N approve    Esc cancel/quit    Ctrl+O project "
         }
         Msg::TitleHome => " home ",
         Msg::TitleFolders => " folders ",
@@ -44,6 +44,9 @@ pub fn t(msg: Msg) -> &'static str {
         Msg::TitleCommands => " /commands ",
         Msg::TitleSession => " session ",
         Msg::TitleOpenProject => " open project ",
+        Msg::TitleAttach => " attached ",
+        Msg::TitleFiles => " @files ",
+        Msg::TitleWorktrees => " worktrees ",
         Msg::NoProject => "(no project selected)",
         Msg::ProjectLabel => "Project",
         Msg::HomeHint => "Open a project to start the session.",
@@ -53,22 +56,26 @@ pub fn t(msg: Msg) -> &'static str {
         Msg::DiscoverFailed => "discover failed",
         Msg::PickerStatusProject => "project root detected - Ctrl+Enter / Ctrl+S to open",
         Msg::PickerStatusNav => {
-            "↑↓ navigate  Enter open folder  Ctrl+Enter select  Esc cancel  type filter"
+            "↑↓ navigate  Enter open folder  -> worktrees  Ctrl+Enter select  Esc cancel"
+        }
+        Msg::PickerStatusWorktrees => {
+            "worktrees - Enter/Ctrl+Enter open  <- back to folders  Esc cancel"
         }
         Msg::PickerFilter => "filter",
         Msg::PickerProjectTag => "[project]",
+        Msg::PickerWorktreeTag => "[worktree]",
         Msg::SessionFailedOpen => "failed to open project",
         Msg::SessionFixHint => "fix project / config, then Ctrl+O",
-        Msg::SessionStatusDryRun => "dry-run  Enter send  Ctrl+J newline  /help",
-        Msg::SessionStatusAuto => "auto-approve  Enter send  /help",
+        Msg::SessionStatusDryRun => "dry-run  Enter send  @file  /help",
+        Msg::SessionStatusAuto => "auto-approve  Enter send  @file  /help",
         Msg::SessionStatusBlocked => {
-            "writes blocked (set agent_auto_approve or --dry-run)  Enter send  /help"
+            "write/shell need y/N confirm  Enter send  @file  /help"
         }
         Msg::SessionCleared => "session cleared",
         Msg::SessionRunning => "running... Esc to cancel",
         Msg::SessionCancelReq => "cancel requested...",
         Msg::SessionHelp => {
-            "commands: /scan /plan [kind] /run <prompt> /config /clear /audit /exit"
+            "commands: /scan /plan [kind] /run <prompt> /config /clear /audit /exit  attach with @path or @path#L20-45"
         }
         Msg::SessionUnknownCmd => "unknown command; /help",
         Msg::SessionUsageRun => "usage: /run <prompt>",
@@ -83,5 +90,26 @@ pub fn t(msg: Msg) -> &'static str {
         Msg::RoleSystem => "system",
         Msg::SupportedWord => "supported",
         Msg::UnsupportedWord => "unsupported",
+        Msg::PermTitle => " allow tool? ",
+        Msg::PermHint => "y / Enter = allow    n / Esc = deny",
+        Msg::PermPrompt => "permission required - y/n",
+        Msg::DoctorTitle => "# tester doctor\n\n",
+        Msg::DoctorOk => "ok",
+        Msg::DoctorFail => "FAIL",
+        Msg::ReportTitle => "# tester report\n\n",
+        Msg::ReportProject => "project",
+        Msg::ReportLanguage => "language",
+        Msg::ReportPackage => "package",
+        Msg::ReportWarnings => "## Warnings\n\n",
+        Msg::ReportFailures => "## Failure summary\n\n",
+        Msg::ReportResults => "## Results\n\n| symbol | kind | file | attempts | status | first_pass | density | usefulness | command |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n",
+        Msg::ReportTrace => "Trace",
+        Msg::ReportStatusPlanned => "planned",
+        Msg::ReportStatusDryRun => "dry_run",
+        Msg::ReportStatusWritten => "written",
+        Msg::ReportStatusPassed => "passed",
+        Msg::ReportStatusUnfixed => "unfixed",
+        Msg::ReportStatusSkipped => "skipped",
+        Msg::ReportStatusFailedPath => "failed_path",
     }
 }
