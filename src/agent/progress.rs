@@ -16,6 +16,9 @@ impl Progress {
 
     pub fn step(&mut self, label: &str) {
         self.last = label.to_string();
+        if crossterm::terminal::is_raw_mode_enabled().unwrap_or(false) {
+            return;
+        }
         let secs = self.started.elapsed().as_secs();
         let spinner = match secs % 4 {
             0 => "|",

@@ -96,7 +96,7 @@ fn scan_rust_project() {
     let dir = tempfile::tempdir().unwrap();
     write_rust_demo(dir.path());
     let out = Command::new(bin())
-        .args(["scan", dir.path().to_str().unwrap()])
+        .args(["--locale", "en", "scan", dir.path().to_str().unwrap()])
         .output()
         .unwrap();
     assert!(
@@ -105,9 +105,9 @@ fn scan_rust_project() {
         String::from_utf8_lossy(&out.stderr)
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(stdout.contains("язык: rust"));
-    assert!(stdout.contains("команда_тестов: cargo test"));
-    assert!(stdout.contains("возможности:"));
+    assert!(stdout.contains("language: rust"), "{stdout}");
+    assert!(stdout.contains("test_command: cargo test"), "{stdout}");
+    assert!(stdout.contains("capabilities:"), "{stdout}");
 }
 
 #[test]
@@ -121,7 +121,7 @@ fn scan_detects_other_languages() {
         let dir = tempfile::tempdir().unwrap();
         write(dir.path());
         let out = Command::new(bin())
-            .args(["scan", dir.path().to_str().unwrap()])
+            .args(["--locale", "en", "scan", dir.path().to_str().unwrap()])
             .output()
             .unwrap();
         assert!(
@@ -130,8 +130,11 @@ fn scan_detects_other_languages() {
             String::from_utf8_lossy(&out.stderr)
         );
         let stdout = String::from_utf8_lossy(&out.stdout);
-        assert!(stdout.contains(&format!("язык: {lang}")), "{lang} {stdout}");
-        assert!(stdout.contains("поддерживается: true"), "{lang} {stdout}");
+        assert!(
+            stdout.contains(&format!("language: {lang}")),
+            "{lang} {stdout}"
+        );
+        assert!(stdout.contains("supported: true"), "{lang} {stdout}");
     }
 }
 
@@ -165,7 +168,7 @@ fn scan_fixtures_dir() {
     ] {
         let path = root.join(rel);
         let out = Command::new(bin())
-            .args(["scan", path.to_str().unwrap()])
+            .args(["--locale", "en", "scan", path.to_str().unwrap()])
             .output()
             .unwrap();
         assert!(
@@ -174,7 +177,10 @@ fn scan_fixtures_dir() {
             String::from_utf8_lossy(&out.stderr)
         );
         let stdout = String::from_utf8_lossy(&out.stdout);
-        assert!(stdout.contains(&format!("язык: {lang}")), "{lang} {stdout}");
+        assert!(
+            stdout.contains(&format!("language: {lang}")),
+            "{lang} {stdout}"
+        );
     }
 }
 

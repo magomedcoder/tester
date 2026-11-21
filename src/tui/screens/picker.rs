@@ -1,4 +1,5 @@
 use crate::adapter;
+use crate::i18n::{self, Msg};
 use crate::tui::recents::Recents;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::Frame;
@@ -150,9 +151,9 @@ impl PickerScreen {
                     "ok: {} ({})",
                     profile.language.as_str(),
                     if profile.supported {
-                        "supported"
+                        i18n::t(Msg::SupportedWord)
                     } else {
-                        "unsupported"
+                        i18n::t(Msg::UnsupportedWord)
                     }
                 );
             }
@@ -219,9 +220,9 @@ impl PickerScreen {
             self.selected = self.rows.len().saturating_sub(1);
         }
         self.status = if adapter::has_manifest(&self.cwd) {
-            "project root detected - Ctrl+Enter / Ctrl+S to open".into()
+            i18n::t(Msg::PickerStatusProject).into()
         } else {
-            "↑↓ navigate  Enter open folder  Ctrl+Enter select  Esc cancel  type filter".into()
+            i18n::t(Msg::PickerStatusNav).into()
         };
     }
 
@@ -239,11 +240,11 @@ impl PickerScreen {
         let filter_line = if self.filter.is_empty() {
             String::new()
         } else {
-            format!("  filter: {}", self.filter)
+            format!("  {}: {}", i18n::t(Msg::PickerFilter), self.filter)
         };
         let header = Paragraph::new(Line::from(vec![
             Span::styled(
-                " open project ",
+                i18n::t(Msg::TitleOpenProject),
                 Style::default().add_modifier(Modifier::BOLD),
             ),
             Span::raw(crumb),
@@ -272,7 +273,10 @@ impl PickerScreen {
                             .to_string();
                         if *is_project {
                             (
-                                format!("{mark} {name}/  [project]"),
+                                format!(
+                                    "{mark} {name}/  {}",
+                                    i18n::t(Msg::PickerProjectTag)
+                                ),
                                 Style::default().add_modifier(Modifier::BOLD),
                             )
                         } else {
@@ -284,12 +288,18 @@ impl PickerScreen {
             })
             .collect();
 
-        let list =
-            List::new(items).block(Block::default().borders(Borders::ALL).title(" folders "));
+        let list = List::new(items).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(i18n::t(Msg::TitleFolders)),
+        );
         frame.render_widget(list, chunks[1]);
 
-        let status = Paragraph::new(self.status.as_str())
-            .block(Block::default().borders(Borders::ALL).title(" status "));
+        let status = Paragraph::new(self.status.as_str()).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(i18n::t(Msg::TitleStatus)),
+        );
         frame.render_widget(status, chunks[2]);
     }
 }

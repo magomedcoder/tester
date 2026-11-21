@@ -47,14 +47,15 @@ Config: `<root>/tester.toml`. Default `--kind all`; `run` writes files immediate
 
 ## Global options
 
-| Option                | Description                              |
-| --------------------- | ---------------------------------------- |
-| `--format text\|json` | Output format (`text` by default)        |
-| `--debug`             | Verbose log (prompts, HTTP to the model) |
-| `-h`, `--help`        | Help                                     |
-| `-V`, `--version`     | Version                                  |
+| Option                | Description                                                             |
+| --------------------- | ----------------------------------------------------------------------- |
+| `--format text\|json` | Output format (`text` by default)                                       |
+| `--debug`             | Verbose log (prompts, HTTP to the model)                                |
+| `--locale en\|ru`     | UI language (overrides `TESTER_LOCALE` / `LANG` / `tester.toml` locale) |
+| `-h`, `--help`        | Help                                                                    |
+| `-V`, `--version`     | Version                                                                 |
 
-Model, `base_url`, `api_key`, and `agent_auto_approve` are set only in `tester.toml` (`[llm]` / `[run]`).
+Model, `base_url`, `api_key`, and `agent_auto_approve` are set only in `tester.toml` (`[llm]` / `[run]`). Locale: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` in `tester.toml` -> `en`.
 
 ## Commands
 
@@ -174,21 +175,24 @@ In `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/config`, `/clear`, `/audi
 
 ### `tui`
 
-Interactive terminal UI. Requires a TTY. Without `PATH`, opens the project/folder picker. Fallback: `--plain` -> `chat` (PATH required).
+Interactive terminal UI. Requires a TTY. Without `PATH`, opens the project/folder picker, then a chat session. Fallback: `--plain` -> `chat` (PATH required).
 
 ```bash
 tester tui
 tester tui /path/to/project --dry-run
+tester tui /path/to/project --resume
 tester tui /path/to/project --plain
 ```
 
-| Flag        | Description                                     |
-| ----------- | ----------------------------------------------- |
-| `--dry-run` | Passed through to future session / agent wiring |
-| `--resume`  | Reserved for session resume                     |
-| `--plain`   | Use classic `chat` REPL instead of TUI          |
+| Flag        | Description                                            |
+| ----------- | ------------------------------------------------------ |
+| `--dry-run` | Agent tools do not write / do not run write shell cmds |
+| `--resume`  | Load `.tester/session.json` into the transcript        |
+| `--plain`   | Use classic `chat` REPL instead of TUI                 |
 
-Keybinds: `Ctrl+O` open project picker  `↑↓` navigate  `Enter` open folder  `Ctrl+Enter` / `Ctrl+S` select  type to filter  `Esc` back  `q` quit. Recents: `~/.local/share/.tester/recents.json`.
+Picker: `Ctrl+O`  `↑↓`  `Enter` open folder  `Ctrl+Enter` / `Ctrl+S` select  type to filter  `Esc` back. Recents: `~/.local/share/.tester/recents.json`.
+
+Session: `Enter` send  `Ctrl+J` newline  `/scan` `/plan` `/run` `/config` `/clear` `/audit` `/exit`  `Esc` cancel run / quit. Without `agent_auto_approve` (and not `--dry-run`), write/shell tools are blocked until confirm modals land.
 
 ### `ui init`
 
@@ -202,6 +206,8 @@ tester run /path/to/web-app --kind ui
 ## Config `tester.toml`
 
 ```toml
+locale = "en"
+
 [llm]
 base_url = "http://127.0.0.1:8080/v1"
 model = ""
@@ -225,6 +231,12 @@ max_tool_calls = 40
 agent_deadline_secs = 600
 agent_auto_approve = false
 ```
+
+### Top-level
+
+| Key      | Default | Description               |
+| -------- | ------- | ------------------------- |
+| `locale` | `en`    | UI language: `en` or `ru` |
 
 ### `[llm]`
 

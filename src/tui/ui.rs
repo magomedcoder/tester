@@ -1,5 +1,6 @@
 use super::app::App;
 use super::screens::Screen;
+use crate::i18n::{self, Msg};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
@@ -22,6 +23,7 @@ pub fn draw(frame: &mut Frame<'_>, app: &App) {
             Style::default().add_modifier(Modifier::BOLD),
         ),
         Span::raw("tui"),
+        Span::raw(format!("    {}", i18n::current().as_str())),
     ];
     if app.dry_run {
         title_spans.push(Span::raw("   dry-run"));
@@ -36,13 +38,13 @@ pub fn draw(frame: &mut Frame<'_>, app: &App) {
     match &app.screen {
         Screen::Home(home) => home.draw(frame, chunks[1]),
         Screen::Picker(picker) => picker.draw(frame, chunks[1]),
+        Screen::Session(session) => session.draw(frame, chunks[1]),
     }
 
     let footer_text = match &app.screen {
-        Screen::Home(_) => " Ctrl+O open project    q/Esc quit ",
-        Screen::Picker(_) => {
-            " ↑↓  Enter open    Ctrl+Enter/Ctrl+S select    Esc back    type to filter "
-        }
+        Screen::Home(_) => i18n::t(Msg::FooterHome),
+        Screen::Picker(_) => i18n::t(Msg::FooterPicker),
+        Screen::Session(_) => i18n::t(Msg::FooterSession),
     };
     let footer = Paragraph::new(footer_text).block(Block::default().borders(Borders::TOP));
     frame.render_widget(footer, chunks[2]);

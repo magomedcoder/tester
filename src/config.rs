@@ -4,6 +4,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(default)]
+    pub locale: Option<String>,
     pub llm: LlmConfig,
     pub target: TargetConfig,
     pub tests: TestsConfig,
@@ -152,6 +154,7 @@ fn default_max_context() -> usize {
 
 #[derive(Debug, Deserialize, Default)]
 struct RawConfig {
+    locale: Option<String>,
     llm: Option<LlmConfig>,
     target: Option<RawTarget>,
     tests: Option<TestsConfig>,
@@ -178,7 +181,8 @@ impl Config {
 
         let _ = raw.target;
 
-        Ok(Config {
+        let config = Config {
+            locale: raw.locale,
             llm: raw.llm.unwrap_or_else(|| LlmConfig {
                 base_url: default_base_url(),
                 model: String::new(),
@@ -189,7 +193,9 @@ impl Config {
             target: TargetConfig { root },
             tests: raw.tests.unwrap_or_default(),
             run: raw.run.unwrap_or_default(),
-        })
+        };
+        crate::i18n::apply_config_locale(config.locale.as_deref());
+        Ok(config)
     }
 }
 

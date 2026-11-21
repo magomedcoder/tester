@@ -1,4 +1,5 @@
 use crate::agent::{AgentContext, AuditLog, PermissionPolicy, run_one_shot, run_repl};
+use crate::i18n::{self, Msg};
 use crate::apply::apply_draft;
 use crate::config::Config;
 use crate::discover::discover;
@@ -31,7 +32,7 @@ pub enum OutputFormat {
 #[command(
     name = "tester",
     version,
-    about = "Генератор тестов на основе LLM / консольный агент"
+    about = "LLM agent for generating and fixing tests"
 )]
 pub struct Cli {
     #[arg(long, global = true, default_value = "text")]
@@ -39,6 +40,9 @@ pub struct Cli {
 
     #[arg(long, global = true)]
     pub debug: bool,
+
+    #[arg(long, global = true, value_name = "LOCALE")]
+    pub locale: Option<String>,
 
     #[command(subcommand)]
     pub command: Commands,
@@ -199,12 +203,13 @@ pub enum UiCommands {
 
 pub fn run() -> StdExitCode {
     let cli = Cli::parse();
+    crate::i18n::init_from_env(cli.locale.as_deref());
     init_tracing(cli.debug);
     install_ctrlc();
     match run_cli(cli) {
         Ok(code) => code.into(),
         Err(err) => {
-            eprintln!("ошибка: {err:#}");
+            eprintln!("{}{err:#}", i18n::t(Msg::ErrorPrefix));
             exit_from_error(&err).into()
         }
     }
@@ -215,7 +220,7 @@ static CANCEL: AtomicBool = AtomicBool::new(false);
 fn install_ctrlc() {
     let _ = ctrlc::set_handler(|| {
         CANCEL.store(true, Ordering::SeqCst);
-        eprintln!("\n^C - отмена после текущего шага...");
+        eprintln!("{}", i18n::t(Msg::CancelHint));
     });
 }
 
@@ -410,22 +415,26 @@ fn cmd_scan(path: &PathBuf, format: OutputFormat) -> Result<ExitCode> {
     match format {
         OutputFormat::Json => println!("{}", serde_json::to_string_pretty(&profile)?),
         OutputFormat::Text => {
-            println!("язык: {}", profile.language.as_str());
-            println!("пакет: {}", profile.package_name);
-            println!("поддерживается: {}", profile.supported);
-            println!("команда_тестов: {}", profile.test_command);
-            println!("стиль_тестов: {:?}", profile.test_style);
-            println!("есть_тесты: {}", profile.has_existing_tests);
+            println!("{}: {}", i18n::t(Msg::Language), profile.language.as_str());
+            println!("{}: {}", i18n::t(Msg::Package), profile.package_name);
+            println!("{}: {}", i18n::t(Msg::Supported), profile.supported);
+            println!("{}: {}", i18n::t(Msg::TestCommand), profile.test_command);
+            println!("{}: {:?}", i18n::t(Msg::TestStyle), profile.test_style);
+            println!("{}: {}", i18n::t(Msg::HasTests), profile.has_existing_tests);
             if let Some(fw) = &profile.unit_framework {
-                println!("фреймворк_юнитов: {fw}");
+                println!("{}: {fw}", i18n::t(Msg::UnitFramework));
             }
             if let Some(fw) = &profile.ui_framework {
-                println!("фреймворк_ui: {fw}");
+                println!("{}: {fw}", i18n::t(Msg::UiFramework));
             }
-            println!("ui_готов: {}", profile.ui_ready);
-            println!("возможности: {}", profile.capabilities.list().join(", "));
+            println!("{}: {}", i18n::t(Msg::UiReady), profile.ui_ready);
+            println!(
+                "{}: {}",
+                i18n::t(Msg::Capabilities),
+                profile.capabilities.list().join(", ")
+            );
             for n in &profile.notes {
-                println!("заметка: {n}");
+                println!("{}: {n}", i18n::t(Msg::Note));
             }
         }
     }
@@ -451,19 +460,20 @@ fn cmd_plan(
         OutputFormat::Json => println!("{}", serde_json::to_string_pretty(&plan)?),
         OutputFormat::Text => {
             if plan.items.is_empty() {
-                println!("нет целей");
+                println!("{}", i18n::t(Msg::NoGoals));
             }
             for item in &plan.items {
                 println!(
-                    "- [{}] {} -> {} ({})",
+                    "- [{}] {} {} {} ({})",
                     item.kind.as_str(),
                     item.gap.symbol.name,
+                    i18n::t(Msg::PlanArrow),
                     item.target_path.display(),
                     item.gap.reason
                 );
             }
             for w in &plan.warnings {
-                eprintln!("предупреждение: {w}");
+                eprintln!("{}{w}", i18n::t(Msg::WarningPrefix));
             }
         }
     }
@@ -685,7 +695,8 @@ fn cmd_run(
     }
     if !profile.supported {
         bail!(
-            "язык {} распознан, но пока не поддерживается",
+            "{}: {}",
+            i18n::t(Msg::UnsupportedLanguage),
             profile.language.as_str()
         );
     }
@@ -694,14 +705,14 @@ fn cmd_run(
     let plan = build_plan_with(&profile, &config, kind, &opts)?;
     if plan.items.is_empty() {
         for w in &plan.warnings {
-            eprintln!("предупреждение: {w}");
+            eprintln!("{}{w}", i18n::t(Msg::WarningPrefix));
         }
-        eprintln!("нет целей");
+        eprintln!("{}", i18n::t(Msg::NoGoals));
         return Ok(ExitCode::NO_GOALS);
     }
-    let llm = need_llm(&config).map_err(|e| e.context("llm недоступна"))?;
+    let llm = need_llm(&config).map_err(|e| e.context(i18n::t(Msg::LlmUnavailable)))?;
     eprintln!(
-        "| plan -> generate -> validate -> repair ({} целей)",
+        "| plan -> generate -> validate -> repair ({})",
         plan.items.len()
     );
     let items = run_plan(llm.as_ref(), &profile, &config, &plan, write, update)?;
@@ -878,9 +889,9 @@ timeout_secs = 180
             })
         ),
         OutputFormat::Text => {
-            println!("Playwright инициализирован в {}", root.display());
-            println!("конфиг: {}", config_path.display());
-            println!("тесты: {}", e2e.display());
+            println!("{} {}", i18n::t(Msg::PlaywrightInit), root.display());
+            println!("{}: {}", i18n::t(Msg::ConfigLabel), config_path.display());
+            println!("{}: {}", i18n::t(Msg::TestsLabel), e2e.display());
         }
     }
     Ok(ExitCode::OK)

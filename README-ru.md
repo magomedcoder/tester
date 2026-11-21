@@ -47,14 +47,15 @@ tester doctor /проект
 
 ## Глобальные опции
 
-| Опция                 | Описание                               |
-| --------------------- | -------------------------------------- |
-| `--format text\|json` | Формат вывода (`text` по умолчанию)    |
-| `--debug`             | Подробный лог (промпты, HTTP к модели) |
-| `-h`, `--help`        | Справка                                |
-| `-V`, `--version`     | Версия                                 |
+| Опция                 | Описание                                                        |
+| --------------------- | --------------------------------------------------------------- |
+| `--format text\|json` | Формат вывода (`text` по умолчанию)                             |
+| `--debug`             | Подробный лог (промпты, HTTP к модели)                          |
+| `--locale en\|ru`     | Язык UI (перебивает `TESTER_LOCALE` / `LANG` / `locale` в toml) |
+| `-h`, `--help`        | Справка                                                         |
+| `-V`, `--version`     | Версия                                                          |
 
-Модель, `base_url`, `api_key` и `agent_auto_approve` задаются только в `tester.toml` (`[llm]` / `[run]`).
+Модель, `base_url`, `api_key` и `agent_auto_approve` задаются только в `tester.toml` (`[llm]` / `[run]`). Локаль: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` в `tester.toml` -> `en`.
 
 ## Команды
 
@@ -183,21 +184,24 @@ tester chat /путь-проекту
 
 ### `tui`
 
-Интерактивный терминальный UI. Нужен TTY. Без `PATH` открывает picker проекта/папки. Fallback: `--plain` -> `chat` (нужен PATH).
+Интерактивный терминальный UI. Нужен TTY. Без `PATH` - picker, затем chat-сессия. Fallback: `--plain` -> `chat` (нужен PATH).
 
 ```bash
 tester tui
 tester tui /путь-проекту --dry-run
+tester tui /путь-проекту --resume
 tester tui /путь-проекту --plain
 ```
 
-| Флаг        | Описание                            |
-| ----------- | ----------------------------------- |
-| `--dry-run` | Проброс в будущую session / agent   |
-| `--resume`  | Зарезервировано под resume сессии   |
-| `--plain`   | Классический `chat` REPL вместо TUI |
+| Флаг        | Описание                                      |
+| ----------- | --------------------------------------------- |
+| `--dry-run` | Agent tools не пишут и не гоняют write shell  |
+| `--resume`  | Загрузить `.tester/session.json` в transcript |
+| `--plain`   | Классический `chat` REPL вместо TUI           |
 
-Клавиши: `Ctrl+O` picker  `↑↓` навигация  `Enter` открыть папку  `Ctrl+Enter` / `Ctrl+S` выбрать  набор фильтра  `Esc` назад  `q` выход. Recents: `~/.local/share/.tester/recents.json`.
+Picker: `Ctrl+O`  `↑↓`  `Enter` папка  `Ctrl+Enter` / `Ctrl+S` выбрать  фильтр  `Esc` назад. Recents: `~/.local/share/.tester/recents.json`.
+
+Session: `Enter` отправить  `Ctrl+J` новая строка  `/scan` `/plan` `/run` `/config` `/clear` `/audit` `/exit`  `Esc` отмена/выход. Без `agent_auto_approve` (и не `--dry-run`) write/shell блокируются до modal confirm.
 
 ### `ui init`
 
@@ -211,6 +215,8 @@ tester run /path/to/web-app --kind ui
 ## Конфиг `tester.toml`
 
 ```toml
+locale = "ru"
+
 [llm]
 base_url = "http://127.0.0.1:8080/v1"
 model = ""
@@ -234,6 +240,12 @@ max_tool_calls = 40
 agent_deadline_secs = 600
 agent_auto_approve = false
 ```
+
+### Верхний уровень
+
+| Ключ     | По умолчанию | Описание               |
+| -------- | ------------ | ---------------------- |
+| `locale` | `en`         | Язык UI: `en` или `ru` |
 
 ### `[llm]`
 

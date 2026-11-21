@@ -26,9 +26,7 @@ pub struct TuiOptions {
 
 pub fn run(opts: TuiOptions) -> Result<()> {
     if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
-        bail!(
-            "tui требует интерактивный терминал; используйте `tester chat <PATH>` или запустите в TTY"
-        );
+        bail!("{}", crate::i18n::t(crate::i18n::Msg::TuiNeedsTty));
     }
 
     let mut app = App::new(opts);
@@ -65,6 +63,8 @@ fn run_loop(
         if event::poll(Duration::from_millis(100))? {
             let ev = event::read()?;
             app.handle(ev);
+        } else {
+            app.handle(event::Event::Tick);
         }
     }
     Ok(())

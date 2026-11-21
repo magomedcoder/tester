@@ -2,6 +2,7 @@ use super::TuiOptions;
 use super::event::Event;
 use super::screens::home::{HomeAction, HomeScreen};
 use super::screens::picker::{PickerAction, PickerScreen};
+use super::screens::session::{SessionAction, SessionScreen};
 use super::screens::Screen;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use std::path::PathBuf;
@@ -32,28 +33,36 @@ impl App {
     }
 
     fn set_project(&mut self, path: PathBuf) {
-        let mut home = HomeScreen::new(None);
-        home.set_project(path);
-        self.project = home.path.clone();
-        self.screen = Screen::Home(home);
+        let session = SessionScreen::open(path, self.dry_run, self.resume);
+        self.project = Some(session.root().to_path_buf());
+        self.screen = Screen::Session(session);
     }
 
     pub fn handle(&mut self, event: Event) {
         match event {
             Event::Key(key) => self.handle_key(key),
             Event::Resize => {}
-            Event::Tick => {}
+            Event::Tick => {
+                if let Screen::Session(session) = &mut self.screen {
+                    session.tick();
+                }
+            }
         }
     }
 
     fn handle_key(&mut self, key: KeyEvent) {
         if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
+            if let Screen::Session(session) = &mut self.screen {
+                match session.handle_key(key) {
+                    SessionAction::Quit => self.should_quit = true,
+                    SessionAction::OpenPicker => {
+                        self.screen = Screen::Picker(PickerScreen::new(self.project.clone()));
+                    }
+                    SessionAction::None => {}
+                }
+                return;
+            }
             self.should_quit = true;
-            return;
-        }
-
-        if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('o') {
-            self.screen = Screen::Picker(PickerScreen::new(self.project.clone()));
             return;
         }
 
@@ -63,19 +72,38 @@ impl App {
                     self.should_quit = true;
                     return;
                 }
-                if matches!(home.handle_key(key), HomeAction::OpenPicker) {
+                if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('o')
+                    || matches!(home.handle_key(key), HomeAction::OpenPicker)
+                {
                     let start = self.project.clone();
                     self.screen = Screen::Picker(PickerScreen::new(start));
+                } else if key.code == KeyCode::Enter {
+                    if let Some(path) = self.project.clone() {
+                        self.set_project(path);
+                    }
                 }
             }
-            Screen::Picker(picker) => match picker.handle_key(key) {
-                PickerAction::None => {}
-                PickerAction::Cancel => {
-                    let path = self.project.clone();
-                    self.screen = Screen::Home(HomeScreen::new(path));
+            Screen::Picker(picker) => {
+                if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('o') {
+                    return;
                 }
-                PickerAction::Selected(path) => {
-                    self.set_project(path);
+                match picker.handle_key(key) {
+                    PickerAction::None => {}
+                    PickerAction::Cancel => {
+                        if let Some(path) = self.project.clone() {
+                            self.set_project(path);
+                        } else {
+                            self.screen = Screen::Home(HomeScreen::new(None));
+                        }
+                    }
+                    PickerAction::Selected(path) => self.set_project(path),
+                }
+            }
+            Screen::Session(session) => match session.handle_key(key) {
+                SessionAction::None => {}
+                SessionAction::Quit => self.should_quit = true,
+                SessionAction::OpenPicker => {
+                    self.screen = Screen::Picker(PickerScreen::new(self.project.clone()));
                 }
             },
         }

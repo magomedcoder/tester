@@ -23,6 +23,7 @@ pub mod failure;
 pub mod gate;
 pub mod generate;
 pub mod green_cache;
+pub mod i18n;
 pub mod index;
 pub mod inventory;
 pub mod llm;

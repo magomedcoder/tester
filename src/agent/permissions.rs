@@ -6,6 +6,7 @@ pub enum PermissionMode {
     AutoYes,
     Prompt,
     DryRun,
+    DenyWrites,
 }
 
 #[derive(Debug, Clone)]
@@ -25,11 +26,23 @@ impl PermissionPolicy {
         Self { mode }
     }
 
+    pub fn for_tui(yes: bool, dry_run: bool) -> Self {
+        let mode = if dry_run {
+            PermissionMode::DryRun
+        } else if yes {
+            PermissionMode::AutoYes
+        } else {
+            PermissionMode::DenyWrites
+        };
+        Self { mode }
+    }
+
     pub fn allow(&self, kind: ToolKind, tool: &str, preview: &str) -> bool {
         match (self.mode, kind) {
             (_, ToolKind::ReadOnly) => true,
             (PermissionMode::AutoYes, _) => true,
             (PermissionMode::DryRun, _) => true,
+            (PermissionMode::DenyWrites, ToolKind::Write | ToolKind::Shell) => false,
             (PermissionMode::Prompt, ToolKind::Write | ToolKind::Shell) => confirm(tool, preview),
         }
     }
