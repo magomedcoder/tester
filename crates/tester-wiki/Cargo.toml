@@ -1,0 +1,21 @@
+[package]
+name = "tester-wiki"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Wiki ingest, analysis, and UI scenario extraction for Tester"
+
+[dependencies]
+anyhow = { workspace = true }
+regex = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tester-core = { workspace = true }
+tester-providers = { workspace = true }
+tracing = { workspace = true }
+walkdir = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

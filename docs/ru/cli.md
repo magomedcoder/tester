@@ -16,8 +16,8 @@ Slash и клавиши интерфейса: [ui.md](ui.md).
 | `-h`, `--help`        | Справка                                                         |
 | `-V`, `--version`     | Версия                                                          |
 
-`[[providers]]` и `agent_auto_approve` - в `~/.tester/tester.toml` (`[[providers]]` / `[run]`). 
-Model `--model`, `tester models` или TUI `/model` (auto, если на endpoint ровно одна модель; последний выбор в `~/.tester/model`). 
+`[[providers]]` и `agent_auto_approve` - в `~/.tester/tester.toml` (`[[providers]]` / `[run]`).
+Model `--model`, `tester models` или TUI `/model` (auto, если на endpoint ровно одна модель; последний выбор в `~/.tester/model`).
 Локаль: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` в toml -> `en`.
 
 ## Тестовый пайплайн (`tester test ...`)
@@ -221,4 +221,18 @@ max_files = 4000
 ```bash
 tester ui init /path/to/web-app
 tester test run /path/to/web-app --kind ui
+```
+
+## Wiki -> UI-тесты (`tester wiki ...`)
+
+Только ссылка или путь к md:
+
+```bash
+tester wiki run /path/to/project --url https://wiki.example.org/ --write
+tester wiki run /path/to/project --wiki-path ./docs/wiki --write
+
+tester wiki sync /project --url https://wiki.example.org/
+tester wiki analyze /project # LLM-батчи по умолчанию
+tester wiki analyze /project --no-llm # только эвристики
+tester wiki plan /project [--version 1.2]
 ```

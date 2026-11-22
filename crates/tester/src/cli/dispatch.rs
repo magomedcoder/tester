@@ -79,5 +79,6 @@ fn run_cli(cli: Cli) -> Result<ExitCode> {
         Commands::Ui(UiCommands::Init { path }) => commands::ui::cmd_ui_init(&path, format),
         Commands::Ui(UiCommands::Doctor { path }) => commands::ui::cmd_ui_doctor(&path, format),
         Commands::Security(cmd) => commands::security::dispatch_security(cmd, model),
+        Commands::Wiki(cmd) => commands::wiki::dispatch_wiki(cmd, format, model),
     }
 }

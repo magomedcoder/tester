@@ -172,7 +172,7 @@ fn infer_filter(profile: &ProjectProfile, item: &PlanItem, path: &Path, content:
                     .unwrap_or_else(|| item.gap.symbol.name.clone())
             }
         }
-        Language::TypeScript => path
+        Language::TypeScript | Language::JavaScript | Language::Blank => path
             .file_name()
             .and_then(|s| s.to_str())
             .unwrap_or(&item.gap.symbol.name)
@@ -184,7 +184,7 @@ fn infer_filter(profile: &ProjectProfile, item: &PlanItem, path: &Path, content:
 fn find_style_sample(profile: &ProjectProfile) -> Result<Option<String>> {
     let exts: &[&str] = match profile.language {
         Language::Rust => &["rs"],
-        Language::TypeScript => &["ts", "js"],
+        Language::TypeScript | Language::JavaScript | Language::Blank => &["ts", "js"],
         _ => return Ok(None),
     };
     for file in iter_source_files(&profile.root, exts) {
@@ -192,7 +192,9 @@ fn find_style_sample(profile: &ProjectProfile) -> Result<Option<String>> {
         let text = std::fs::read_to_string(&file).unwrap_or_default();
         let is_test = match profile.language {
             Language::Rust => text.contains("#[test]"),
-            Language::TypeScript => name.contains(".test.") || name.contains(".spec."),
+            Language::TypeScript | Language::JavaScript | Language::Blank => {
+                name.contains(".test.") || name.contains(".spec.")
+            }
             _ => false,
         };
         if is_test {

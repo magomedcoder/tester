@@ -16,6 +16,7 @@ pub enum Language {
     Kotlin,
     Php,
     Cpp,
+    Blank,
     Unknown,
 }
 
@@ -32,6 +33,7 @@ impl Language {
             Self::Kotlin => "kotlin",
             Self::Php => "php",
             Self::Cpp => "cpp",
+            Self::Blank => "blank",
             Self::Unknown => "unknown",
         }
     }

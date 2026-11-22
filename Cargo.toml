@@ -17,8 +17,10 @@ tester-security = { path = "crates/tester-security" }
 tester-pipeline = { path = "crates/tester-pipeline" }
 tester-agent = { path = "crates/tester-agent" }
 tester-tui = { path = "crates/tester-tui" }
+tester-wiki = { path = "crates/tester-wiki" }
 
 anyhow = "1"
+url = "2"
 clap = { version = "4", features = ["derive"] }
 crossterm = "0.28"
 ctrlc = "3"

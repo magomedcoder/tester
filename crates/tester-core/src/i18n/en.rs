@@ -339,6 +339,13 @@ Commands:
             "API surface detected (OpenAPI/proto/router) - contract kind is available"
         }
         Msg::NoteCppKinds => "C++: contract/UI kinds unsupported; unit+integration via gtest",
+        Msg::NoteBlankWorkspace => {
+            "blank workspace: no language manifest - wiki/docs -> Playwright UI only"
+        }
+        Msg::NoteBlankNeedUiInit => {
+            "Playwright not scaffolded yet - run `tester ui init` or `wiki run --write`"
+        }
+        Msg::WarnBlankUiScaffold => "blank workspace: scaffolding Playwright before write",
         Msg::NoteAndroidOptIn => {
             "Android project: instrumented tests require run.android_opt_in = true in ~/.tester/tester.toml"
         }
@@ -358,8 +365,12 @@ Commands:
         Msg::ErrNoMutationApplied => "could not apply any mutation",
         Msg::ErrNoFixturesDir => "no fixtures directory: {path}",
         Msg::ErrNoAdapterForLang => "no adapter for {lang}",
-        Msg::ErrLangUndetected => "could not detect project language in {root}",
-        Msg::ErrProjectManifestNotFound => "project manifest not found",
+        Msg::ErrProjectManifestNotFound => {
+            "project manifest not found under {path}"
+        }
+        Msg::ErrProjectManifestAmbiguous => {
+            "several projects under {path}: {candidates} - pass an explicit path"
+        }
         Msg::ErrPatchFragmentNotFound => "old fragment not found in {path}",
         Msg::ErrToolArgRequired => "argument '{key}' required (string)",
         Msg::ErrPlanSymbolNotFound => "symbol '{symbol}' not found in plan",
@@ -392,6 +403,7 @@ Commands:
             "model not set: {count} models available - pick with /model or --model"
         }
         Msg::SlashModel => "select LLM model (from /models)",
+        Msg::SlashWiki => "wiki sync/analyze/run from URL or path",
         Msg::ModelOverlayTitle => " models  Enter select  r refresh  Esc ",
         Msg::ModelOverlayEmpty => "(no models)",
         Msg::ModelSelected => "model: {model}",
@@ -399,5 +411,78 @@ Commands:
         Msg::ModelPersisted => "saved model={model} to {path}",
         Msg::ModelNotSetBadge => "model?",
         Msg::ModelBusyReject => "cannot switch model while a job is running",
+        Msg::WikiHelpUsage => {
+            "/wiki sync <url|path> | /wiki analyze | /wiki run <url|path> | /wiki status"
+        }
+        Msg::WikiStatusLine => {
+            "wiki status: kind={kind} pages={pages} scenarios={scenarios} url={url} path={path}"
+        }
+        Msg::WikiNoCache => "wiki: no cache - /wiki sync <url|path>",
+        Msg::WikiStatusError => "wiki status error: {err}",
+        Msg::WikiNeedsArg => "/wiki {sub} needs <url|path>",
+        Msg::WikiAlreadyRunning => "wiki: already running",
+        Msg::WikiWorking => "wiki {sub}...",
+        Msg::WikiOpOk => "wiki {sub} ok: kind={kind} pages={pages}{extra}",
+        Msg::WikiOpFailed => "wiki {sub} failed: {err}",
+        Msg::WikiAnalyzeWorking => "wiki analyze...",
+        Msg::WikiAnalyzeOkTui => {
+            "wiki analyze ok: versions={versions} scenarios={scenarios} hubs={hubs} edges={edges}"
+        }
+        Msg::WikiAnalyzeFailed => "wiki analyze failed: {err}",
+        Msg::WikiUnknownSub => "/wiki {sub}: use sync|analyze|run|status",
+        Msg::WikiExtraPlanItems => "; plan_items={n}",
+        Msg::WikiExtraAnalyzeError => "; analyze error: {err}",
+        Msg::WikiExtraScenarios => "; scenarios={n}",
+        Msg::WikiSyncOk => "wiki sync ok: kind={kind} pages={pages}",
+        Msg::WikiSyncEmptySkipped => "wiki sync: skipped {n} empty page(s)",
+        Msg::WikiSourceLine => "source: {src}",
+        Msg::WikiCacheLine => "cache: {path}",
+        Msg::NoteWikiHeuristicAnalyze => {
+            "wiki analyze: no LLM - heuristic scenarios only"
+        }
+        Msg::WarnWikiLlmPartial => "wiki LLM analyze partial: {err}",
+        Msg::WikiAnalyzeOk => {
+            "wiki analyze ok: versions={versions} scenarios={scenarios} entities={entities} hubs={hubs} toc={toc} edges={edges}"
+        }
+        Msg::WikiScenarioLine => "  - [{version}] {title} ({steps} steps)",
+        Msg::WikiPlanOk => "wiki plan: {n} item(s)",
+        Msg::WikiPlanItem => "  - {name} -> {path}",
+        Msg::WikiPlanWarning => "wiki plan",
+        Msg::WikiRunGenerating => "wiki run: generating {n} UI draft(s)",
+        Msg::WikiWrote => "  wrote {path}",
+        Msg::WikiPlaywrightOk => "  playwright ok: {path}",
+        Msg::WikiPlaywrightFail => "  playwright FAIL: {path} ({cmd})",
+        Msg::WikiPlaywrightError => "  playwright error: {err}",
+        Msg::WikiDraftPreview => "  draft {path} ({bytes} bytes) - pass --write to save",
+        Msg::WikiRunDone => {
+            "wiki run done: items={items} written={written} playwright_ok={ok} playwright_fail={fail}"
+        }
+        Msg::ErrWikiNoScenarios => "no wiki UI scenarios - run `tester wiki analyze` first",
+        Msg::ErrWikiRunNoItems => "wiki run: no UI plan items after analyze",
+        Msg::ErrWikiRunNeedsWrite => "--run requires --write",
+        Msg::ErrWikiCacheEmpty => "wiki cache empty - run sync first (--url or --path)",
+        Msg::ErrWikiNeedUrlOrPath => {
+            "provide --url or --path (nothing stored in .tester/wiki/source.json yet)"
+        }
+        Msg::ErrWikiHtmlNoHost => "url has no host",
+        Msg::ErrWikiHtmlZeroPages => "HTML crawl downloaded 0 pages from {url}",
+        Msg::ErrWikiMwZeroPages => "MediaWiki returned no pages from {api}",
+        Msg::ErrWikiMwAllpagesHttp => "allpages HTTP {status}",
+        Msg::ErrWikiMwExtractsHttp => "extracts HTTP {status}",
+        Msg::ErrWikiMdNotDir => "markdown path is not a directory: {path}",
+        Msg::ErrWikiMdZeroPages => "no markdown pages found under {path}",
+        Msg::ErrWikiLlmNoJson => "no JSON array in llm response",
+        Msg::WikiScenarioReason => "wiki scenario: {title}",
+        Msg::WikiPreconditionsHeader => "Preconditions:",
+        Msg::WikiScenarioLabel => "Wiki scenario: {title}",
+        Msg::WikiCoverageLabel => "Coverage: {coverage}",
+        Msg::WikiSourcesLabel => "Sources: {sources}",
+        Msg::ToolWikiSync => {
+            "Download wiki into .tester/wiki (MediaWiki/HTML via url, or local markdown path)"
+        }
+        Msg::ToolWikiSearch => "Search cached wiki pages by substring (title/body)",
+        Msg::ToolWikiScenarioList => {
+            "List UI scenarios from .tester/wiki/scenarios.json (after wiki_sync + analyze)"
+        }
     }
 }

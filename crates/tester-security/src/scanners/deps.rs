@@ -71,7 +71,7 @@ pub fn scan(
     if !found_any {
         notes.push("no lockfile found for dependency advisory pass".into());
     } else if opts.fetch_advisories {
-        match crate::advisory::query_osv_stub(root) {
+        match crate::advisory::query_osv(root) {
             Ok(extra) => {
                 notes.push(format!("advisory fetch: {} hits", extra.len()));
                 for mut f in extra {
@@ -85,7 +85,9 @@ pub fn scan(
             Err(e) => notes.push(format!("advisory fetch skipped: {e}")),
         }
     } else {
-        notes.push("dependency advisories: offline stub (enable fetch_advisories for OSV)".into());
+        notes.push(
+            "dependency advisories: skipped (enable fetch_advisories for OSV query)".into(),
+        );
     }
 
     Ok(out)

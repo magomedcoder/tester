@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use serde_json::json;
 use std::path::Path;
 
-pub fn query_osv_stub(root: &Path) -> Result<Vec<Finding>> {
+pub fn query_osv(root: &Path) -> Result<Vec<Finding>> {
     let pkgs = collect_package_names(root);
     if pkgs.is_empty() {
         return Ok(Vec::new());

@@ -4,6 +4,7 @@ mod fs;
 mod git;
 mod security;
 mod shell;
+mod wiki;
 
 use crate::AgentContext;
 use anyhow::{Result, anyhow};
@@ -88,6 +89,9 @@ pub fn default_registry(ctx: &AgentContext) -> ToolRegistry {
         Arc::new(security::SecurityScan),
         Arc::new(security::SecurityExplain),
         Arc::new(security::SecurityPatch),
+        Arc::new(wiki::WikiSync),
+        Arc::new(wiki::WikiSearch),
+        Arc::new(wiki::WikiScenarioList),
     ];
     if ctx.config.run.allow_docker {
         tools.push(Arc::new(shell::DockerInfo));

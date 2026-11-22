@@ -9,7 +9,7 @@ use tester_core::error::AppError;
 use tester_core::i18n::{self, Msg};
 use tracing::{debug, info, warn};
 
-pub(crate) struct CompatClient {
+pub(crate) struct OpenaiCompatClient {
     http: reqwest::blocking::Client,
     base_url: String,
     model: String,
@@ -17,7 +17,7 @@ pub(crate) struct CompatClient {
     max_tokens: u32,
 }
 
-impl CompatClient {
+impl OpenaiCompatClient {
     pub fn new(config: &LlmConfig, api_key: Option<String>) -> Result<Self> {
         let http = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(config.timeout_secs))
@@ -291,7 +291,7 @@ fn parse_sse_stream(
     })
 }
 
-impl Llm for CompatClient {
+impl Llm for OpenaiCompatClient {
     fn complete(&self, system: &str, user: &str) -> Result<String> {
         let messages = vec![ChatMessage::system(system), ChatMessage::user(user)];
         let result = self.chat(&messages, &[], None)?;

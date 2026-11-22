@@ -16,8 +16,8 @@ Most commands take `<PATH>` - path to the project or any file inside it (root is
 | `-h`, `--help`        | Help                                                                    |
 | `-V`, `--version`     | Version                                                                 |
 
-`[[providers]]` and `agent_auto_approve` come from `~/.tester/tester.toml` (`[[providers]]` / `[run]`). 
-Model `--model`, `tester models`, or TUI `/model` (auto-pick when exactly one model is listed; last choice in `~/.tester/model`). 
+`[[providers]]` and `agent_auto_approve` come from `~/.tester/tester.toml` (`[[providers]]` / `[run]`).
+Model `--model`, `tester models`, or TUI `/model` (auto-pick when exactly one model is listed; last choice in `~/.tester/model`).
 Locale: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` in toml -> `en`.
 
 ## Test pipeline (`tester test ...`)
@@ -221,4 +221,18 @@ Minimal Playwright setup: `playwright.config.ts`, `e2e/` directory, `npm install
 ```bash
 tester ui init /path/to/web-app
 tester test run /path/to/web-app --kind ui
+```
+
+## Wiki -> UI tests (`tester wiki ...`)
+
+Pass a URL or local markdown path:
+
+```bash
+tester wiki run /path/to/project --url https://wiki.example.org/ --write
+tester wiki run /path/to/project --wiki-path ./docs/wiki --write
+
+tester wiki sync /project --url https://wiki.example.org/
+tester wiki analyze /project # LLM batches by default
+tester wiki analyze /project --no-llm # heuristics only
+tester wiki plan /project [--version 1.2]
 ```

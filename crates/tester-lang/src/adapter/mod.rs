@@ -1,3 +1,4 @@
+mod blank;
 mod cpp;
 mod dart;
 mod go;
@@ -6,6 +7,8 @@ mod php;
 mod python;
 mod rust;
 mod typescript;
+
+pub use blank::scaffold_playwright;
 
 use anyhow::{Result, bail};
 use std::path::{Path, PathBuf};
@@ -38,6 +41,7 @@ pub(crate) fn registry() -> Vec<&'static dyn LanguageAdapter> {
         &kotlin::KotlinAdapter,
         &php::PhpAdapter,
         &cpp::CppAdapter,
+        &blank::BlankAdapter,
     ]
 }
 
@@ -50,6 +54,8 @@ pub fn adapter_for(language: Language) -> Result<&'static dyn LanguageAdapter> {
                 Some(&dart::DartAdapter as &dyn LanguageAdapter)
             } else if language == Language::JavaScript {
                 Some(&typescript::TypeScriptAdapter as &dyn LanguageAdapter)
+            } else if language == Language::Blank {
+                Some(&blank::BlankAdapter as &dyn LanguageAdapter)
             } else {
                 None
             }
@@ -122,13 +128,9 @@ pub fn ensure_scaffold(profile: &ProjectProfile) -> Result<()> {
 pub(crate) fn discover(root: &Path) -> Result<ProjectProfile> {
     let lang = detect_language(root);
     if lang == Language::Unknown {
-        bail!(
-            "{}",
-            i18n::tr(
-                Msg::ErrLangUndetected,
-                &[("root", &root.display().to_string())],
-            )
-        );
+        let mut profile = blank::blank_profile(root);
+        profile.supported = true;
+        return Ok(profile);
     }
     let adapter = adapter_for(lang)?;
     let mut profile = adapter.discover(root)?;
@@ -170,13 +172,68 @@ pub fn find_project_root(start: &Path) -> Result<PathBuf> {
     } else {
         start.to_path_buf()
     };
-    let mut cur = start.canonicalize().unwrap_or(start);
+    let start = start.canonicalize().unwrap_or(start);
+    let mut cur = start.clone();
     loop {
         if has_manifest(&cur) {
             return Ok(cur);
         }
         if !cur.pop() {
-            bail!("{}", i18n::t(Msg::ErrProjectManifestNotFound));
+            break;
+        }
+    }
+    if let Some(child) = unique_child_project(&start)? {
+        return Ok(child);
+    }
+    if start.is_dir() {
+        return Ok(start);
+    }
+    bail!(
+        "{}",
+        i18n::tr(
+            Msg::ErrProjectManifestNotFound,
+            &[("path", &start.display().to_string())]
+        )
+    )
+}
+
+fn unique_child_project(dir: &Path) -> Result<Option<PathBuf>> {
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return Ok(None);
+    };
+    let mut hits = Vec::new();
+    for entry in rd.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+        if name.starts_with('.') || name.eq_ignore_ascii_case("node_modules") {
+            continue;
+        }
+        if has_manifest(&path) {
+            hits.push(path);
+        }
+    }
+    match hits.len() {
+        0 => Ok(None),
+        1 => Ok(Some(hits.remove(0))),
+        _ => {
+            let candidates = hits
+                .iter()
+                .filter_map(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
+                .collect::<Vec<_>>()
+                .join(", ");
+            bail!(
+                "{}",
+                i18n::tr(
+                    Msg::ErrProjectManifestAmbiguous,
+                    &[
+                        ("path", &dir.display().to_string()),
+                        ("candidates", &candidates),
+                    ]
+                )
+            )
         }
     }
 }
@@ -223,6 +280,17 @@ mod tests {
         assert!(langs.contains(&Language::Kotlin));
         assert!(langs.contains(&Language::Php));
         assert!(langs.contains(&Language::Dart));
+        assert!(langs.contains(&Language::Blank));
+    }
+
+    #[test]
+    fn scaffold_playwright_creates_manifest() {
+        let dir = tempfile::tempdir().unwrap();
+        blank::scaffold_playwright_with(dir.path(), false).unwrap();
+        assert!(dir.path().join("package.json").exists());
+        assert!(dir.path().join("playwright.config.ts").exists());
+        assert!(dir.path().join("e2e").is_dir());
+        assert!(blank::playwright_ready(dir.path()));
     }
 
     #[test]
@@ -243,5 +311,33 @@ mod tests {
         assert_eq!(profile.language, Language::Rust);
         assert!(profile.capabilities.unit);
         assert!(profile.capabilities.integration);
+    }
+
+    #[test]
+    fn finds_unique_nested_project() {
+        let home = tempfile::tempdir().unwrap();
+        let nested = home.path().join("app");
+        std::fs::create_dir_all(nested.join("src")).unwrap();
+        std::fs::write(
+            nested.join("Cargo.toml"),
+            "[package]\nname=\"d\"\nversion=\"0.1.0\"\nedition=\"2021\"\n[lib]\npath=\"src/lib.rs\"\n",
+        )
+        .unwrap();
+        std::fs::write(nested.join("src/lib.rs"), "pub fn x(){}\n").unwrap();
+        std::fs::create_dir_all(home.path().join("docs")).unwrap();
+        let root = find_project_root(home.path()).unwrap();
+        assert_eq!(root, nested.canonicalize().unwrap_or(nested));
+    }
+
+    #[test]
+    fn empty_dir_becomes_blank_workspace() {
+        let home = tempfile::tempdir().unwrap();
+        let root = find_project_root(home.path()).unwrap();
+        assert_eq!(root, home.path().canonicalize().unwrap_or(home.path().to_path_buf()));
+        let profile = discover(&root).unwrap();
+        assert_eq!(profile.language, Language::Blank);
+        assert!(profile.supported);
+        assert!(profile.capabilities.ui);
+        assert!(!profile.capabilities.unit);
     }
 }

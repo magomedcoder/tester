@@ -21,6 +21,7 @@ tester-providers = { workspace = true }
 tester-pipeline = { workspace = true }
 tester-security = { workspace = true }
 tester-tui = { workspace = true }
+tester-wiki = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 

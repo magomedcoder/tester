@@ -1,11 +1,11 @@
-use crate::{CompatClient, Llm};
+use crate::{OpenaiCompatClient, Llm};
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::thread;
 use tester_core::config::LlmConfig;
 
 #[test]
-fn compat_client_against_local_server() {
+fn openai_compat_client_against_local_server() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = listener.local_addr().unwrap();
     thread::spawn(move || {
@@ -27,7 +27,7 @@ fn compat_client_against_local_server() {
     cfg.max_tokens = 64;
     cfg.timeout_secs = 5;
     cfg.ensure_providers();
-    let client = CompatClient::new(&cfg, None).unwrap();
+    let client = OpenaiCompatClient::new(&cfg, None).unwrap();
     let out = client.complete("sys", "ping").unwrap();
     assert_eq!(out, "pong");
 }

@@ -339,6 +339,13 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::NoteCppKinds => {
             "C++: contract/UI kinds не поддерживаются; unit+integration через gtest"
         }
+        Msg::NoteBlankWorkspace => {
+            "blank workspace: нет манифеста языка - только wiki/docs -> Playwright UI"
+        }
+        Msg::NoteBlankNeedUiInit => {
+            "Playwright ещё не scaffold - выполните `tester ui init` или `wiki run --write`"
+        }
+        Msg::WarnBlankUiScaffold => "blank workspace: scaffolding Playwright перед записью",
         Msg::NoteAndroidOptIn => {
             "Android-проект: instrumented-тесты требуют run.android_opt_in = true в ~/.tester/tester.toml"
         }
@@ -358,8 +365,12 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::ErrNoMutationApplied => "не удалось применить ни одну мутацию",
         Msg::ErrNoFixturesDir => "нет каталога fixtures: {path}",
         Msg::ErrNoAdapterForLang => "нет адаптера для {lang}",
-        Msg::ErrLangUndetected => "не удалось определить язык проекта в {root}",
-        Msg::ErrProjectManifestNotFound => "манифест проекта не найден",
+        Msg::ErrProjectManifestNotFound => {
+            "манифест проекта не найден в {path}"
+        }
+        Msg::ErrProjectManifestAmbiguous => {
+            "несколько проектов в {path}: {candidates} - укажите путь явно"
+        }
         Msg::ErrPatchFragmentNotFound => "фрагмент old не найден в {path}",
         Msg::ErrToolArgRequired => "нужен аргумент '{key}' (string)",
         Msg::ErrPlanSymbolNotFound => "символ '{symbol}' не найден в плане",
@@ -390,6 +401,7 @@ y/N для write/shellapprove/reject плана через /propose_plan
             "model не задан: доступно {count} - выберите /model или --model"
         }
         Msg::SlashModel => "выбрать LLM model (из /models)",
+        Msg::SlashWiki => "wiki sync/analyze/run по URL или пути",
         Msg::ModelOverlayTitle => " модели  Enter выбрать  r обновить  Esc ",
         Msg::ModelOverlayEmpty => "(нет моделей)",
         Msg::ModelSelected => "model: {model}",
@@ -397,5 +409,80 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::ModelPersisted => "сохранено model={model} в {path}",
         Msg::ModelNotSetBadge => "model?",
         Msg::ModelBusyReject => "нельзя сменить model пока идёт задача",
+        Msg::WikiHelpUsage => {
+            "/wiki sync <url|path> | /wiki analyze | /wiki run <url|path> | /wiki status"
+        }
+        Msg::WikiStatusLine => {
+            "wiki статус: kind={kind} pages={pages} scenarios={scenarios} url={url} path={path}"
+        }
+        Msg::WikiNoCache => "wiki: нет кэша - /wiki sync <url|path>",
+        Msg::WikiStatusError => "wiki status ошибка: {err}",
+        Msg::WikiNeedsArg => "/wiki {sub} нужен <url|path>",
+        Msg::WikiAlreadyRunning => "wiki: уже выполняется",
+        Msg::WikiWorking => "wiki {sub}...",
+        Msg::WikiOpOk => "wiki {sub} ок: kind={kind} pages={pages}{extra}",
+        Msg::WikiOpFailed => "wiki {sub} ошибка: {err}",
+        Msg::WikiAnalyzeWorking => "wiki analyze...",
+        Msg::WikiAnalyzeOkTui => {
+            "wiki analyze ок: versions={versions} scenarios={scenarios} hubs={hubs} edges={edges}"
+        }
+        Msg::WikiAnalyzeFailed => "wiki analyze ошибка: {err}",
+        Msg::WikiUnknownSub => "/wiki {sub}: используйте sync|analyze|run|status",
+        Msg::WikiExtraPlanItems => "; plan_items={n}",
+        Msg::WikiExtraAnalyzeError => "; analyze ошибка: {err}",
+        Msg::WikiExtraScenarios => "; scenarios={n}",
+        Msg::WikiSyncOk => "wiki sync ок: kind={kind} pages={pages}",
+        Msg::WikiSyncEmptySkipped => "wiki sync: пропущено пустых страниц: {n}",
+        Msg::WikiSourceLine => "источник: {src}",
+        Msg::WikiCacheLine => "кэш: {path}",
+        Msg::NoteWikiHeuristicAnalyze => {
+            "wiki analyze: без LLM - только эвристические сценарии"
+        }
+        Msg::WarnWikiLlmPartial => "wiki LLM analyze частично: {err}",
+        Msg::WikiAnalyzeOk => {
+            "wiki analyze ок: versions={versions} scenarios={scenarios} entities={entities} hubs={hubs} toc={toc} edges={edges}"
+        }
+        Msg::WikiScenarioLine => "  - [{version}] {title} ({steps} шагов)",
+        Msg::WikiPlanOk => "wiki plan: {n} элемент(ов)",
+        Msg::WikiPlanItem => "  - {name} -> {path}",
+        Msg::WikiPlanWarning => "wiki plan",
+        Msg::WikiRunGenerating => "wiki run: генерация {n} UI draft(ов)",
+        Msg::WikiWrote => "  записано {path}",
+        Msg::WikiPlaywrightOk => "  playwright ок: {path}",
+        Msg::WikiPlaywrightFail => "  playwright FAIL: {path} ({cmd})",
+        Msg::WikiPlaywrightError => "  playwright ошибка: {err}",
+        Msg::WikiDraftPreview => "  draft {path} ({bytes} байт) - передайте --write чтобы сохранить",
+        Msg::WikiRunDone => {
+            "wiki run готово: items={items} written={written} playwright_ok={ok} playwright_fail={fail}"
+        }
+        Msg::ErrWikiNoScenarios => {
+            "нет UI-сценариев wiki - сначала `tester wiki analyze`"
+        }
+        Msg::ErrWikiRunNoItems => "wiki run: нет UI plan items после analyze",
+        Msg::ErrWikiRunNeedsWrite => "--run требует --write",
+        Msg::ErrWikiCacheEmpty => "кэш wiki пуст - сначала sync (--url или --path)",
+        Msg::ErrWikiNeedUrlOrPath => {
+            "укажите --url или --path (в .tester/wiki/source.json ещё ничего нет)"
+        }
+        Msg::ErrWikiHtmlNoHost => "у url нет host",
+        Msg::ErrWikiHtmlZeroPages => "HTML crawl скачал 0 страниц с {url}",
+        Msg::ErrWikiMwZeroPages => "MediaWiki не вернул страниц с {api}",
+        Msg::ErrWikiMwAllpagesHttp => "allpages HTTP {status}",
+        Msg::ErrWikiMwExtractsHttp => "extracts HTTP {status}",
+        Msg::ErrWikiMdNotDir => "путь markdown не директория: {path}",
+        Msg::ErrWikiMdZeroPages => "markdown-страниц не найдено в {path}",
+        Msg::ErrWikiLlmNoJson => "в ответе llm нет JSON-массива",
+        Msg::WikiScenarioReason => "wiki сценарий: {title}",
+        Msg::WikiPreconditionsHeader => "Предусловия:",
+        Msg::WikiScenarioLabel => "Wiki сценарий: {title}",
+        Msg::WikiCoverageLabel => "Покрытие: {coverage}",
+        Msg::WikiSourcesLabel => "Источники: {sources}",
+        Msg::ToolWikiSync => {
+            "Скачать wiki в .tester/wiki (MediaWiki/HTML по url или локальный markdown)"
+        }
+        Msg::ToolWikiSearch => "Поиск по кэшу wiki (title/body)",
+        Msg::ToolWikiScenarioList => {
+            "Список UI-сценариев из .tester/wiki/scenarios.json (после wiki_sync + analyze)"
+        }
     }
 }

@@ -60,6 +60,7 @@ const SLASH_CMDS: &[&str] = &[
     "propose_plan",
     "security",
     "model",
+    "wiki",
 ];
 
 fn slash_desc(cmd: &str) -> &'static str {
@@ -88,6 +89,7 @@ fn slash_desc(cmd: &str) -> &'static str {
         "propose_plan" => i18n::t(Msg::SlashProposePlan),
         "security" => i18n::t(Msg::SlashSecurity),
         "model" => i18n::t(Msg::SlashModel),
+        "wiki" => i18n::t(Msg::SlashWiki),
         _ => "",
     }
 }
@@ -143,6 +145,7 @@ pub struct SessionScreen {
     last_usage: Usage,
     ctx_limit: u32,
     plan_stash: String,
+    wiki_rx: Option<Receiver<String>>,
 }
 
 impl SessionScreen {
@@ -186,6 +189,7 @@ impl SessionScreen {
             last_usage: Usage::default(),
             ctx_limit,
             plan_stash: String::new(),
+            wiki_rx: None,
         };
         match open_context_with_policy(&path, dry_run, false, true) {
             Ok(ctx) => {
@@ -248,7 +252,7 @@ impl SessionScreen {
     }
 
     pub fn is_busy(&self) -> bool {
-        self.job.is_some()
+        self.job.is_some() || self.wiki_rx.is_some()
     }
 
     pub fn cancel_job(&mut self) {
@@ -366,6 +370,22 @@ impl SessionScreen {
     pub fn tick(&mut self) {
         self.tick_n = self.tick_n.wrapping_add(1);
         self.health.tick();
+        let wiki_done = match &self.wiki_rx {
+            Some(rx) => match rx.try_recv() {
+                Ok(msg) => Some(Some(msg)),
+                Err(TryRecvError::Disconnected) => Some(None),
+                Err(TryRecvError::Empty) => None,
+            },
+            None => None,
+        };
+        if let Some(maybe_msg) = wiki_done {
+            self.wiki_rx = None;
+            if let Some(msg) = maybe_msg {
+                self.push_system(msg);
+                self.status = i18n::t(Msg::StatusIdle).into();
+                self.status_error = false;
+            }
+        }
         if self.pending_perm.is_none() {
             if let Some(job) = &self.job {
                 if let Ok(req) = job.perm_rx.try_recv() {
@@ -1193,9 +1213,161 @@ impl SessionScreen {
                     Some(filter)
                 });
             }
+            "wiki" => {
+                let rest = cmd.strip_prefix("wiki").unwrap_or("").trim();
+                self.handle_wiki_slash(rest);
+            }
             other => self.push_system(format!("/{other}: {}", i18n::t(Msg::SessionUnknownCmd))),
         }
         SessionAction::None
+    }
+
+    fn handle_wiki_slash(&mut self, rest: &str) {
+        let mut parts = rest.split_whitespace();
+        let sub = parts.next().unwrap_or("").to_string();
+        let arg = parts.collect::<Vec<_>>().join(" ");
+        let root = self.path.clone();
+        match sub.as_str() {
+            "" | "help" => {
+                self.push_system(i18n::t(Msg::WikiHelpUsage).into());
+            }
+            "status" => match tester_wiki::load_source(&root) {
+                Ok(Some(src)) => {
+                    let n = tester_wiki::load_index(&root)
+                        .map(|i| i.pages.len())
+                        .unwrap_or(0);
+                    let sc = tester_wiki::load_scenarios(&root)
+                        .map(|s| s.scenarios.len())
+                        .unwrap_or(0);
+                    self.push_system(i18n::tr(
+                        Msg::WikiStatusLine,
+                        &[
+                            ("kind", &format!("{:?}", src.kind)),
+                            ("pages", &n.to_string()),
+                            ("scenarios", &sc.to_string()),
+                            ("url", &format!("{:?}", src.url)),
+                            ("path", &format!("{:?}", src.path)),
+                        ],
+                    ));
+                }
+                Ok(None) => self.push_system(i18n::t(Msg::WikiNoCache).into()),
+                Err(e) => self.push_system(i18n::tr(
+                    Msg::WikiStatusError,
+                    &[("err", &format!("{e:#}"))],
+                )),
+            },
+            "sync" | "run" => {
+                if arg.is_empty() {
+                    self.push_system(i18n::tr(Msg::WikiNeedsArg, &[("sub", &sub)]));
+                    return;
+                }
+                if self.wiki_rx.is_some() {
+                    self.push_system(i18n::t(Msg::WikiAlreadyRunning).into());
+                    return;
+                }
+                let do_run = sub == "run";
+                let (url, path) = if arg.starts_with("http://") || arg.starts_with("https://") {
+                    (Some(arg), None)
+                } else {
+                    (None, Some(std::path::PathBuf::from(arg)))
+                };
+                self.push_system(i18n::tr(Msg::WikiWorking, &[("sub", &sub)]));
+                self.status = i18n::tr(Msg::WikiWorking, &[("sub", &sub)]);
+                let (tx, rx) = mpsc::channel();
+                self.wiki_rx = Some(rx);
+                let label = sub.clone();
+                thread::spawn(move || {
+                    let sync_res = tester_wiki::sync(
+                        &root,
+                        tester_wiki::SyncOpts {
+                            url,
+                            path,
+                            max_pages: 500,
+                        },
+                    );
+                    let msg = match sync_res {
+                        Ok((src, index)) => {
+                            let analyze_res = tester_wiki::analyze(&root, None);
+                            let sc_n = analyze_res
+                                .as_ref()
+                                .map(|(_, s)| s.scenarios.len())
+                                .unwrap_or(0);
+                            let extra = if do_run {
+                                match analyze_res {
+                                    Ok(_) => {
+                                        let items = tester_wiki::plan_items_from_wiki(
+                                            &root, None, 20,
+                                        )
+                                        .unwrap_or_default();
+                                        i18n::tr(
+                                            Msg::WikiExtraPlanItems,
+                                            &[("n", &items.len().to_string())],
+                                        )
+                                    }
+                                    Err(e) => i18n::tr(
+                                        Msg::WikiExtraAnalyzeError,
+                                        &[("err", &format!("{e:#}"))],
+                                    ),
+                                }
+                            } else if let Err(e) = analyze_res {
+                                i18n::tr(
+                                    Msg::WikiExtraAnalyzeError,
+                                    &[("err", &format!("{e:#}"))],
+                                )
+                            } else {
+                                i18n::tr(
+                                    Msg::WikiExtraScenarios,
+                                    &[("n", &sc_n.to_string())],
+                                )
+                            };
+                            i18n::tr(
+                                Msg::WikiOpOk,
+                                &[
+                                    ("sub", &label),
+                                    ("kind", &format!("{:?}", src.kind)),
+                                    ("pages", &index.pages.len().to_string()),
+                                    ("extra", &extra),
+                                ],
+                            )
+                        }
+                        Err(e) => i18n::tr(
+                            Msg::WikiOpFailed,
+                            &[("sub", &label), ("err", &format!("{e:#}"))],
+                        ),
+                    };
+                    let _ = tx.send(msg);
+                });
+            }
+            "analyze" => {
+                if self.wiki_rx.is_some() {
+                    self.push_system(i18n::t(Msg::WikiAlreadyRunning).into());
+                    return;
+                }
+                self.push_system(i18n::t(Msg::WikiAnalyzeWorking).into());
+                self.status = i18n::t(Msg::WikiAnalyzeWorking).into();
+                let (tx, rx) = mpsc::channel();
+                self.wiki_rx = Some(rx);
+                thread::spawn(move || {
+                    let msg = match tester_wiki::analyze(&root, None) {
+                        Ok((a, s)) => i18n::tr(
+                            Msg::WikiAnalyzeOkTui,
+                            &[
+                                ("versions", &a.versions.len().to_string()),
+                                ("scenarios", &s.scenarios.len().to_string()),
+                                ("hubs", &a.hub_pages.len().to_string()),
+                                ("edges", &a.graph_edges.len().to_string()),
+                            ],
+                        ),
+                        Err(e) => i18n::tr(
+                            Msg::WikiAnalyzeFailed,
+                            &[("err", &format!("{e:#}"))],
+                        ),
+                    };
+                    let _ = tx.send(msg);
+                });
+            }
+            other => self.push_system(i18n::tr(Msg::WikiUnknownSub, &[("sub", other)])),
+        }
     }
 
     fn switch_chat_session(&mut self, id: Option<String>) {

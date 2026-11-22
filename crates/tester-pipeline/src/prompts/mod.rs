@@ -99,7 +99,7 @@ fn integration_helpers(lang: Language) -> String {
         Language::Php => "PHP: vfsStream / temp dir",
         Language::Dart | Language::Flutter => "Dart: Directory.systemTemp",
         Language::Cpp => "C++: временная директория в test fixture",
-        Language::Unknown => "temp dir / in-memory fakes",
+        Language::Blank | Language::Unknown => "temp dir / in-memory fakes",
     };
     format!("integration_helpers: {tip}")
 }

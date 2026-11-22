@@ -170,7 +170,26 @@ pub fn build_plan_with(
     }
 
     let kinds = kind.expand();
-    if kinds.contains(&TestKind::Ui) && profile.capabilities.ui {
+    let wiki_ui = if kinds.contains(&TestKind::Ui) {
+        let max = opts
+            .max_items
+            .unwrap_or(config.run.max_items as usize)
+            .max(1);
+        match tester_wiki::plan_items_from_wiki(&profile.root, None, max) {
+            Ok(items) if !items.is_empty() => {
+                warnings.push(format!(
+                    "wiki: {} UI scenario(s) from .tester/wiki",
+                    items.len()
+                ));
+                Some(items)
+            }
+            Ok(_) => None,
+            Err(_) => None,
+        }
+    } else {
+        None
+    };
+    if kinds.contains(&TestKind::Ui) && profile.capabilities.ui && wiki_ui.is_none() {
         push_ui_gaps(profile, &mut gaps, &mut warnings);
     }
 
@@ -209,7 +228,10 @@ pub fn build_plan_with(
         if kind != TestKind::All && kind != TestKind::Ui && gap.kind != kind && kinds.len() == 1 {
             continue;
         }
-        if gap.kind == TestKind::Ui && !profile.ui_ready && profile.language != Language::Flutter {
+        if gap.kind == TestKind::Ui
+            && !profile.ui_ready
+            && !matches!(profile.language, Language::Flutter | Language::Blank)
+        {
             warnings.push(i18n::tr(
                 Msg::WarnUiSkipped,
                 &[("symbol", &gap.symbol.name)],
@@ -237,6 +259,15 @@ pub fn build_plan_with(
         });
     }
 
+    if let Some(wiki_items) = wiki_ui {
+        if profile.language == Language::Blank && !profile.ui_ready {
+            warnings.push(i18n::t(Msg::NoteBlankNeedUiInit).into());
+        }
+        let mut merged = wiki_items;
+        let remain = limit.saturating_sub(merged.len());
+        merged.extend(items.into_iter().take(remain));
+        items = merged;
+    }
     let plan = TestPlan { items, warnings };
     let _ = crate::plan_store::save_plan(&profile.root, &plan);
     Ok(plan)

@@ -1507,6 +1507,7 @@ dependencies = [
  "tester-providers",
  "tester-security",
  "tester-tui",
+ "tester-wiki",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1527,6 +1528,7 @@ dependencies = [
  "tester-pipeline",
  "tester-providers",
  "tester-security",
+ "tester-wiki",
  "tracing",
  "walkdir",
 ]
@@ -1587,6 +1589,7 @@ dependencies = [
  "tester-lang",
  "tester-providers",
  "tester-security",
+ "tester-wiki",
  "tracing",
  "walkdir",
 ]
@@ -1637,7 +1640,25 @@ dependencies = [
  "tester-lang",
  "tester-providers",
  "tester-security",
+ "tester-wiki",
  "unicode-width 0.2.0",
+ "walkdir",
+]
+
+[[package]]
+name = "tester-wiki"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tester-core",
+ "tester-providers",
+ "tracing",
+ "url",
  "walkdir",
 ]
 

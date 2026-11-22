@@ -17,6 +17,7 @@ tester-core = { workspace = true }
 tester-lang = { workspace = true }
 tester-providers = { workspace = true }
 tester-security = { workspace = true }
+tester-wiki = { workspace = true }
 tracing = { workspace = true }
 walkdir = { workspace = true }
 [dev-dependencies]

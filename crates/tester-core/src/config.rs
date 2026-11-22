@@ -17,6 +17,7 @@ pub struct Config {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SecurityConfig {
     #[serde(default = "default_true")]
     pub enabled: bool,
@@ -63,6 +64,7 @@ fn default_security_max_files() -> usize {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AnalysisConfig {
     #[serde(default = "default_true")]
     pub index: bool,
@@ -111,6 +113,7 @@ fn default_grep_max_hits() -> u32 {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LlmProviderConfig {
     pub id: String,
     #[serde(default = "default_provider_kind")]
@@ -212,12 +215,14 @@ fn default_llm_timeout() -> u64 {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
 pub struct TestsConfig {
     #[serde(default)]
     pub ui: UiConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct UiConfig {
     #[serde(default = "default_ui_framework")]
     pub framework: String,
@@ -246,6 +251,7 @@ fn default_ui_base_url() -> String {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RunConfig {
     #[serde(default = "default_repair_attempts")]
     pub repair_attempts: u32,
@@ -326,6 +332,7 @@ fn default_max_context() -> usize {
 }
 
 #[derive(Debug, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
 struct RawConfig {
     locale: Option<String>,
     #[serde(default)]
@@ -465,7 +472,6 @@ fn config_from_raw(raw: RawConfig) -> Config {
 }
 
 impl Config {
-    /// Load `~/.tester/tester.toml` (or `$TESTER_HOME/tester.toml`) + runtime model/provider.
     pub fn load() -> Result<Self> {
         let global_path = ensure_global_config()?;
         let raw: RawConfig = match read_toml_file(&global_path)? {
@@ -600,7 +606,7 @@ android_opt_in = true
     }
 
     #[test]
-    fn rejects_legacy_llm_providers_and_model() {
+    fn rejects_unknown_toml_fields() {
         let home = tempfile::tempdir().unwrap();
         std::fs::write(
             home.path().join("tester.toml"),
@@ -609,9 +615,9 @@ android_opt_in = true
 model = "from-toml"
 
 [[llm.providers]]
-id = "legacy"
+id = "x"
 kind = "openai_compat"
-base_url = "http://legacy:1/v1"
+base_url = "http://x:1/v1"
 "#,
         )
         .unwrap();
@@ -619,6 +625,22 @@ base_url = "http://legacy:1/v1"
         let msg = format!("{err:#}");
         assert!(
             msg.contains("unknown field") || msg.contains("providers") || msg.contains("model"),
+            "unexpected error: {msg}"
+        );
+    }
+
+    #[test]
+    fn rejects_unknown_top_level_keys() {
+        let home = tempfile::tempdir().unwrap();
+        std::fs::write(
+            home.path().join("tester.toml"),
+            "model = \"orphan\"\n[[providers]]\nid = \"llamacpp\"\nkind = \"openai_compat\"\nbase_url = \"http://127.0.0.1:8080/v1\"\n",
+        )
+        .unwrap();
+        let err = with_tester_home(home.path(), || Config::load().unwrap_err());
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("unknown field") || msg.contains("model"),
             "unexpected error: {msg}"
         );
     }

@@ -110,6 +110,56 @@ pub enum Commands {
 
     #[command(subcommand)]
     Security(SecurityCommands),
+
+    #[command(subcommand)]
+    Wiki(WikiCommands),
+}
+
+#[derive(Debug, Subcommand)]
+pub enum WikiCommands {
+    Sync {
+        path: PathBuf,
+        #[arg(long)]
+        url: Option<String>,
+        #[arg(long = "wiki-path", value_name = "DIR")]
+        wiki_path: Option<PathBuf>,
+        #[arg(long, default_value_t = 500)]
+        max_pages: usize,
+    },
+
+    Analyze {
+        path: PathBuf,
+        #[arg(long, default_value_t = true)]
+        llm: bool,
+        #[arg(long)]
+        no_llm: bool,
+    },
+
+    Plan {
+        path: PathBuf,
+        #[arg(long)]
+        version: Option<String>,
+        #[arg(long)]
+        max_items: Option<usize>,
+    },
+
+    Run {
+        path: PathBuf,
+        #[arg(long)]
+        url: Option<String>,
+        #[arg(long = "wiki-path", value_name = "DIR")]
+        wiki_path: Option<PathBuf>,
+        #[arg(long)]
+        version: Option<String>,
+        #[arg(long, default_value_t = 500)]
+        max_pages: usize,
+        #[arg(long)]
+        max_items: Option<usize>,
+        #[arg(long)]
+        write: bool,
+        #[arg(long = "run")]
+        run_tests: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]

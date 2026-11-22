@@ -6,13 +6,13 @@
     clippy::collapsible_if
 )]
 
-mod compat;
+mod openai_compat;
 #[cfg(test)]
-mod compat_tests;
+mod openai_compat_tests;
 mod models;
 mod types;
 
-pub(crate) use compat::CompatClient;
+pub(crate) use openai_compat::OpenaiCompatClient;
 pub use models::{ensure_llm_config, list_models};
 pub use types::{AssistantToolCall, ChatMessage, ChatResult, FunctionCall, ToolSpec, Usage};
 
@@ -42,7 +42,7 @@ pub fn create_client_with_model(config: &LlmConfig) -> Result<Arc<dyn Llm>> {
     if config.model.trim().is_empty() {
         bail!(AppError::ModelNeedsSelection { count: 0 });
     }
-    Ok(Arc::new(CompatClient::new(config, None)?))
+    Ok(Arc::new(OpenaiCompatClient::new(config, None)?))
 }
 
 pub fn unset_model_client() -> Arc<dyn Llm> {
