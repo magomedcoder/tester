@@ -1,6 +1,7 @@
 use crate::cli::args::{OutputFormat, TestCommands};
 use crate::cli::helpers::{
-    apply_config_flags, emit_report, load_config, need_llm, parse_kind, plan_opts, prepare_project,
+    apply_config_flags, emit_report, load_config, need_llm_with_model, parse_kind, plan_opts,
+    prepare_project,
 };
 use anyhow::Result;
 use std::path::PathBuf;
@@ -16,7 +17,11 @@ use tester_pipeline::plan::{PlanOptions, build_plan, build_plan_with};
 use tester_pipeline::repair::{LastRepairState, load_state, run_plan, save_state};
 use tester_pipeline::report::exit_for;
 
-pub(crate) fn dispatch_test(command: TestCommands, format: OutputFormat) -> Result<ExitCode> {
+pub(crate) fn dispatch_test(
+    command: TestCommands,
+    format: OutputFormat,
+    model: Option<&str>,
+) -> Result<ExitCode> {
     match command {
         TestCommands::Scan { path } => cmd_scan(&path, format),
         TestCommands::Plan {
@@ -35,7 +40,7 @@ pub(crate) fn dispatch_test(command: TestCommands, format: OutputFormat) -> Resu
             if show {
                 cmd_plan_show(&path, format)
             } else if apply {
-                cmd_plan_apply(&path, false, false, format)
+                cmd_plan_apply(&path, false, false, format, model)
             } else {
                 cmd_plan(
                     &path,
@@ -64,6 +69,7 @@ pub(crate) fn dispatch_test(command: TestCommands, format: OutputFormat) -> Resu
             format,
             plan_opts(base, bug, bug_file, append, None, None)?,
             package,
+            model,
         ),
         TestCommands::Run {
             path,
@@ -83,8 +89,9 @@ pub(crate) fn dispatch_test(command: TestCommands, format: OutputFormat) -> Resu
             format,
             plan_opts(base, bug, bug_file, append, None, None)?,
             package,
+            model,
         ),
-        TestCommands::Repair { path } => cmd_repair(&path, format),
+        TestCommands::Repair { path } => cmd_repair(&path, format, model),
         TestCommands::Eval {
             path,
             max_symbols,
@@ -173,6 +180,7 @@ pub(crate) fn cmd_generate(
     format: OutputFormat,
     opts: PlanOptions,
     package: Option<String>,
+    model: Option<&str>,
 ) -> Result<ExitCode> {
     let kind = parse_kind(kind)?;
     let mut profile = prepare_project(path)?;
@@ -186,7 +194,7 @@ pub(crate) fn cmd_generate(
         eprintln!("{}", i18n::t(Msg::NoGoals));
         return Ok(ExitCode::NO_GOALS);
     }
-    let llm = need_llm(&config)?;
+    let llm = need_llm_with_model(&config, model)?;
     let mut report = RunReport {
         warnings: plan.warnings.clone(),
         items: vec![],
@@ -268,6 +276,7 @@ pub(crate) fn cmd_run(
     format: OutputFormat,
     opts: PlanOptions,
     package: Option<String>,
+    model: Option<&str>,
 ) -> Result<ExitCode> {
     let kind = parse_kind(kind)?;
     let mut profile = prepare_project(path)?;
@@ -290,7 +299,8 @@ pub(crate) fn cmd_run(
         eprintln!("{}", i18n::t(Msg::NoGoals));
         return Ok(ExitCode::NO_GOALS);
     }
-    let llm = need_llm(&config).map_err(|e| e.context(AppError::LlmUnavailable))?;
+    let llm =
+        need_llm_with_model(&config, model).map_err(|e| e.context(AppError::LlmUnavailable))?;
     eprintln!(
         "{}",
         i18n::tr(Msg::PlanProgress, &[("n", &plan.items.len().to_string())])
@@ -305,11 +315,15 @@ pub(crate) fn cmd_run(
     emit_report(&profile, &report, format)?;
     Ok(ExitCode(exit_for(&report) as u8))
 }
-pub(crate) fn cmd_repair(path: &PathBuf, format: OutputFormat) -> Result<ExitCode> {
+pub(crate) fn cmd_repair(
+    path: &PathBuf,
+    format: OutputFormat,
+    model: Option<&str>,
+) -> Result<ExitCode> {
     let profile = prepare_project(path)?;
     let config = load_config(&profile)?;
     let state = load_state(&profile.root)?;
-    let llm = need_llm(&config)?;
+    let llm = need_llm_with_model(&config, model)?;
     let plan = build_plan(&profile, &config, state.kind)?;
     let item = plan
         .items
@@ -436,6 +450,7 @@ pub(crate) fn cmd_plan_apply(
     write: bool,
     update: bool,
     format: OutputFormat,
+    model: Option<&str>,
 ) -> Result<ExitCode> {
     let profile = prepare_project(path)?;
     let config = load_config(&profile)?;
@@ -443,7 +458,7 @@ pub(crate) fn cmd_plan_apply(
     if plan.items.is_empty() {
         return Ok(ExitCode::NO_GOALS);
     }
-    let llm = need_llm(&config)?;
+    let llm = need_llm_with_model(&config, model)?;
     let items = run_plan(llm.as_ref(), &profile, &config, &plan, write, update)?;
     let mut report = RunReport {
         items,

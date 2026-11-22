@@ -31,9 +31,9 @@ pub(crate) use session::{load_session, save_session};
 
 use anyhow::Result;
 use std::sync::Arc;
-use tester_core::i18n::{self, Msg};
 use std::sync::atomic::AtomicBool;
 use tester_core::config::Config;
+use tester_core::i18n::{self, Msg};
 use tester_core::model::ProjectProfile;
 use tester_llm::Llm;
 
@@ -55,19 +55,67 @@ pub fn open_context_with_policy(
     stream: bool,
     tui_safe: bool,
 ) -> Result<AgentContext> {
+    open_context_ex(path, dry_run, stream, tui_safe, None)
+}
+
+pub fn open_context_ex(
+    path: &std::path::Path,
+    dry_run: bool,
+    stream: bool,
+    tui_safe: bool,
+    model_override: Option<&str>,
+) -> Result<AgentContext> {
     let mut profile = tester_lang::discover::discover(path)?;
     tester_lang::adapter::ensure_scaffold(&profile)?;
     if profile.language == tester_core::model::Language::Cpp {
         profile = tester_lang::discover::discover(path)?;
     }
-    let config = Config::load(&profile.root)?;
+    let mut config = Config::load(&profile.root)?;
     if config.run.android_opt_in {
         profile.android_opt_in = true;
     }
     if config.run.allow_docker {
         profile.notes.push(i18n::t(Msg::NoteDockerAllowed).into());
     }
-    let llm = tester_llm::create_client(&config.llm)?;
+    let had_model = !config.llm.model.trim().is_empty();
+    let explicit = model_override
+        .map(str::trim)
+        .filter(|m| !m.is_empty())
+        .map(str::to_string);
+    if let Some(m) = &explicit {
+        config.llm.model = m.clone();
+    }
+    let llm = match tester_llm::ensure_llm_config(config.llm.clone()) {
+        Ok(cfg) => {
+            let should_persist = explicit.is_some() || (!had_model && !cfg.model.trim().is_empty());
+            config.llm = cfg;
+            if should_persist {
+                if let Err(err) = tester_core::config::persist_llm_model(&config.llm.model) {
+                    if !tui_safe {
+                        return Err(err);
+                    }
+                }
+            }
+            tester_llm::create_client_with_model(&config.llm)?
+        }
+        Err(err) => {
+            let soft = tui_safe
+                && err
+                    .downcast_ref::<tester_core::error::AppError>()
+                    .is_some_and(|e| {
+                        matches!(
+                            e,
+                            tester_core::error::AppError::ModelNeedsSelection { .. }
+                                | tester_core::error::AppError::NoModels
+                        )
+                    });
+            if soft {
+                tester_llm::unset_model_client()
+            } else {
+                return Err(err);
+            }
+        }
+    };
     let yes = config.run.agent_auto_approve;
     let permissions = if tui_safe {
         PermissionPolicy::for_tui(yes, dry_run)

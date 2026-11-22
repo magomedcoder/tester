@@ -7,9 +7,9 @@ mod shell;
 
 use crate::AgentContext;
 use anyhow::{Result, anyhow};
-use tester_core::i18n::{self, Msg};
 use serde_json::Value;
 use std::sync::Arc;
+use tester_core::i18n::{self, Msg};
 use tester_llm::ToolSpec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

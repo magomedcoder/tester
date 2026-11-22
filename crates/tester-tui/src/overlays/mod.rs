@@ -2,6 +2,7 @@ mod branch;
 mod chat_sessions;
 mod diff;
 mod manual;
+mod model;
 mod plan;
 mod security;
 mod session_list;
@@ -10,6 +11,7 @@ pub use branch::BranchOverlay;
 pub use chat_sessions::ChatSessionsOverlay;
 pub use diff::DiffOverlay;
 pub use manual::ManualOverlay;
+pub use model::ModelOverlay;
 pub use plan::{PlanDecision, PlanOverlay};
 pub use security::SecurityOverlay;
 pub use session_list::SessionListOverlay;
@@ -29,6 +31,7 @@ pub enum Overlay {
     Branch(BranchOverlay),
     Plan(PlanOverlay),
     Security(SecurityOverlay),
+    Model(ModelOverlay),
 }
 
 #[derive(Debug, Clone)]
@@ -39,6 +42,7 @@ pub enum OverlayAction {
     ResumeChatSession(String),
     NewChatSession,
     SwitchBranch(String),
+    SelectModel(String),
     PlanDone(PlanDecision),
 }
 
@@ -52,6 +56,7 @@ impl Overlay {
             Overlay::Branch(o) => o.draw(frame, area, theme),
             Overlay::Plan(o) => o.draw(frame, area, theme),
             Overlay::Security(o) => o.draw(frame, area, theme),
+            Overlay::Model(o) => o.draw(frame, area, theme),
         }
     }
 
@@ -64,6 +69,7 @@ impl Overlay {
             Overlay::Branch(o) => o.handle_key(key),
             Overlay::Plan(o) => o.handle_key(key),
             Overlay::Security(o) => o.handle_key(key),
+            Overlay::Model(o) => o.handle_key(key),
         }
     }
 }

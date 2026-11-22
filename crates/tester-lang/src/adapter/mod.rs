@@ -57,10 +57,7 @@ pub fn adapter_for(language: Language) -> Result<&'static dyn LanguageAdapter> {
         .ok_or_else(|| {
             anyhow::anyhow!(
                 "{}",
-                i18n::tr(
-                    Msg::ErrNoAdapterForLang,
-                    &[("lang", language.as_str())],
-                )
+                i18n::tr(Msg::ErrNoAdapterForLang, &[("lang", language.as_str())],)
             )
         })
 }

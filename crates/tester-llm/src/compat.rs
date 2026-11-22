@@ -61,10 +61,7 @@ impl CompatClient {
                             "{}",
                             i18n::tr(
                                 Msg::ErrLlmAccessDenied,
-                                &[
-                                    ("status", &status.to_string()),
-                                    ("detail", &text),
-                                ],
+                                &[("status", &status.to_string()), ("detail", &text),],
                             )
                         );
                     }
@@ -98,8 +95,7 @@ impl CompatClient {
                 }
             }
         }
-        Err(last_err
-            .unwrap_or_else(|| anyhow::Error::new(AppError::LlmUnavailable)))
+        Err(last_err.unwrap_or_else(|| anyhow::Error::new(AppError::LlmUnavailable)))
     }
 }
 
@@ -298,7 +294,8 @@ impl Llm for CompatClient {
     fn complete(&self, system: &str, user: &str) -> Result<String> {
         let messages = vec![ChatMessage::system(system), ChatMessage::user(user)];
         let result = self.chat(&messages, &[], None)?;
-        result.content
+        result
+            .content
             .ok_or_else(|| anyhow!(i18n::t(Msg::ErrLlmEmptyResponse)))
     }
 

@@ -128,39 +128,33 @@ pub fn run_ui_doctor(path: &Path) -> Result<DoctorReport> {
 }
 
 fn check_llm(config: &Config) -> (String, bool, String) {
-    let url = format!("{}/models", config.llm.base_url.trim_end_matches('/'));
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(3))
-        .build()
-    {
-        Ok(c) => c,
-        Err(e) => return ("llm".into(), false, e.to_string()),
-    };
-    let mut req = client.get(&url);
-    if let Some(key) = &config.llm.api_key {
-        req = req.bearer_auth(key);
-    }
-    match req.send() {
-        Ok(resp) if resp.status().is_success() || resp.status().as_u16() == 404 => (
-            "llm".into(),
-            true,
-            format!("{} model={}", config.llm.base_url, config.llm.model),
-        ),
-        Ok(resp) => (
-            "llm".into(),
-            false,
-            i18n::tr(
-                Msg::DoctorHttp,
-                &[
-                    ("status", &resp.status().to_string()),
-                    ("url", &config.llm.base_url),
-                ],
-            ),
-        ),
+    match tester_llm::list_models(&config.llm) {
+        Ok(models) => {
+            let selected = config.llm.model.trim();
+            let (ok, model) = if !selected.is_empty() {
+                (true, selected.to_string())
+            } else {
+                match models.as_slice() {
+                    [] => (false, "(none)".into()),
+                    [one] => (true, format!("{one} (auto)")),
+                    _ => (false, format!("? ({} available)", models.len())),
+                }
+            };
+            (
+                "llm".into(),
+                ok,
+                format!(
+                    "{} model={} ({} listed)",
+                    config.llm.base_url,
+                    model,
+                    models.len()
+                ),
+            )
+        }
         Err(e) => (
             "llm".into(),
             false,
-            format!("{e} ({})", config.llm.base_url),
+            format!("{e:#} ({})", config.llm.base_url),
         ),
     }
 }

@@ -74,16 +74,15 @@ pub fn append_history(root: &Path, symbol: &str, status: ItemStatus, error: &str
 
 pub fn load_state(root: &std::path::Path) -> Result<LastRepairState> {
     let path = state_path(root);
-    let text = std::fs::read_to_string(&path)
-        .map_err(|_| {
-            anyhow!(
-                "{}",
-                tester_core::i18n::tr(
-                    tester_core::i18n::Msg::ErrNoRepairState,
-                    &[("path", &path.display().to_string())],
-                )
+    let text = std::fs::read_to_string(&path).map_err(|_| {
+        anyhow!(
+            "{}",
+            tester_core::i18n::tr(
+                tester_core::i18n::Msg::ErrNoRepairState,
+                &[("path", &path.display().to_string())],
             )
-        })?;
+        )
+    })?;
     Ok(serde_json::from_str(&text)?)
 }
 

@@ -2,16 +2,17 @@
 
 Two files (deep merge; project overrides global):
 
-1. **`~/.tester/tester.toml`** (or `$TESTER_HOME/tester.toml`) - model, api_key, locale, shared defaults. Created automatically on first run if missing.
+1. **`~/.tester/tester.toml`** (or `$TESTER_HOME/tester.toml`) - `base_url`, `api_key`, locale, shared defaults. Created automatically on first run if missing.
 2. **`<project-root>/tester.toml`** - per-repo overlay
+
+Choose with TUI `/model`, CLI `--model`, or `tester models` (auto-pick when the endpoint lists exactly one). Last choice is stored in `~/.tester/model`.
 
 ```toml
 locale = "en"
 
 [llm]
 base_url = "http://127.0.0.1:11434/v1"
-model = ""
-api_key = ""
+# api_key = ""
 
 [run]
 agent_auto_approve = true
@@ -30,7 +31,6 @@ fetch_advisories = false
 | --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------- |
 | `locale`                    | `en`                        | UI language: `en` or `ru`                                                                         |
 | `llm.base_url`              | `http://127.0.0.1:11434/v1` | OpenAI-compatible API base                                                                        |
-| `llm.model`                 | - (required for LLM cmds)   | Model name                                                                                        |
 | `llm.api_key`               | none                        | API key (file only, not env)                                                                      |
 | `run.agent_auto_approve`    | `true`                      | Auto-approve write/shell in project root (`false` -> y/N); path escape / write policy still block |
 | `run.allow_docker`          | `false`                     | Enable agent `docker_info` tool                                                                   |
@@ -44,5 +44,5 @@ Advanced overrides (`max_tokens`, repair budget, agent limits, ...) still parse 
 
 Typical setup: put `[llm]` in the global file; keep only project-specific keys in the workspace file.
 
-Required for: default TUI / `test generate`, `test run`, `test repair`, `agent`, `chat`.  
-Not required for: `test scan`, `test plan`, `test eval`, `security scan`, `ui init`, `sessions`.
+Needed for LLM work: TUI chat / `test generate`, `test run`, `test repair`, `agent`, `chat` (plus a selected model).  
+Not needed for: `test scan`, `test plan`, `test eval`, `security scan`, `ui init`, `sessions`, `models`.

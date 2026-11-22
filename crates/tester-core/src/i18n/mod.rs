@@ -296,7 +296,6 @@ pub enum Msg {
     DoctorNotRequired,
     DoctorGradlewFound,
     DoctorGradlewMissing,
-    DoctorHttp,
     DoctorUiState,
     DoctorSecurityRules,
     SecReportTitle,
@@ -370,6 +369,16 @@ pub enum Msg {
     SessionIdEmpty,
     SessionIdNoMatch,
     SessionIdAmbiguous,
+    ErrNoModels,
+    ErrModelNeedsSelection,
+    SlashModel,
+    ModelOverlayTitle,
+    ModelOverlayEmpty,
+    ModelSelected,
+    ModelSelectHint,
+    ModelPersisted,
+    ModelNotSetBadge,
+    ModelBusyReject,
 }
 
 pub fn t(msg: Msg) -> &'static str {

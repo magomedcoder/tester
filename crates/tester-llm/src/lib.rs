@@ -3,20 +3,24 @@
     clippy::needless_range_loop,
     clippy::obfuscated_if_else,
     clippy::ptr_arg,
-    clippy::collapsible_if,
-    )]
+    clippy::collapsible_if
+)]
 
 mod compat;
 #[cfg(test)]
 mod compat_tests;
+mod models;
 mod types;
 
 pub(crate) use compat::CompatClient;
+pub use models::{ensure_llm_config, list_models};
 pub use types::{AssistantToolCall, ChatMessage, ChatResult, FunctionCall, ToolSpec, Usage};
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use std::sync::Arc;
 use tester_core::config::LlmConfig;
+use tester_core::error::AppError;
+use tester_core::i18n::{self, Msg};
 
 pub trait Llm: Send + Sync {
     fn complete(&self, system: &str, user: &str) -> Result<String>;
@@ -30,7 +34,36 @@ pub trait Llm: Send + Sync {
 }
 
 pub fn create_client(config: &LlmConfig) -> Result<Arc<dyn Llm>> {
+    let cfg = ensure_llm_config(config.clone())?;
+    create_client_with_model(&cfg)
+}
+
+pub fn create_client_with_model(config: &LlmConfig) -> Result<Arc<dyn Llm>> {
+    if config.model.trim().is_empty() {
+        bail!(AppError::ModelNeedsSelection { count: 0 });
+    }
     Ok(Arc::new(CompatClient::new(config, config.api_key.clone())?))
+}
+
+pub fn unset_model_client() -> Arc<dyn Llm> {
+    Arc::new(UnsetModelLlm)
+}
+
+struct UnsetModelLlm;
+
+impl Llm for UnsetModelLlm {
+    fn complete(&self, _system: &str, _user: &str) -> Result<String> {
+        bail!("{}", i18n::t(Msg::ModelSelectHint))
+    }
+
+    fn chat(
+        &self,
+        _messages: &[ChatMessage],
+        _tools: &[ToolSpec],
+        _on_delta: Option<&dyn Fn(&str)>,
+    ) -> Result<ChatResult> {
+        bail!("{}", i18n::t(Msg::ModelSelectHint))
+    }
 }
 
 #[derive(Default)]

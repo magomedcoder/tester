@@ -12,10 +12,13 @@ Most commands take `<PATH>` - path to the project or any file inside it (root is
 | `--format text\|json` | Output format (`text` by default)                                       |
 | `--debug`             | Verbose log (prompts, HTTP to the model)                                |
 | `--locale en\|ru`     | UI language (overrides `TESTER_LOCALE` / `LANG` / `tester.toml` locale) |
+| `--model <ID>`        | Select model for this run                                               |
 | `-h`, `--help`        | Help                                                                    |
 | `-V`, `--version`     | Version                                                                 |
 
-Model, `base_url`, `api_key`, and `agent_auto_approve` come from `~/.tester/tester.toml` and/or `<project>/tester.toml` (`[llm]` / `[run]`; project wins). Locale: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` in toml -> `en`.
+`base_url`, `api_key`, and `agent_auto_approve` come from `~/.tester/tester.toml` and/or `<project>/tester.toml` (`[llm]` / `[run]`; project wins). 
+Model `--model`, `tester models`, or TUI `/model` (auto-pick when exactly one model is listed; last choice in `~/.tester/model`). 
+Locale: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` in toml -> `en`.
 
 ## Test pipeline (`tester test ...`)
 
@@ -118,6 +121,15 @@ Check LLM, toolchain, UI runner, android/docker.
 ```bash
 tester doctor /project
 tester ui doctor /web-app
+```
+
+## `models`
+
+List model ids from `GET {base_url}/models`. Current model (if set) is marked with `*`.
+
+```bash
+tester models
+tester models /path/to/project
 ```
 
 ## `agent` / `chat`

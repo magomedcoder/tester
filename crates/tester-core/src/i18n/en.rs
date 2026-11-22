@@ -296,7 +296,6 @@ Commands:
             "gradlew found; connectedAndroidTest will need a device/emulator"
         }
         Msg::DoctorGradlewMissing => "gradlew not found",
-        Msg::DoctorHttp => "HTTP {status} @ {url}",
         Msg::DoctorUiState => "framework={framework} ready={ready}",
         Msg::DoctorSecurityRules => "{n} rules, enabled={enabled}, deep={deep}",
         Msg::SecReportTitle => "# Security report",
@@ -346,9 +345,7 @@ Commands:
         Msg::NoteVenv => ".venv found",
         Msg::NoteLaravel => "Laravel detected",
 
-        Msg::ErrContextTooLarge => {
-            "context for '{symbol}' exceeds max_context_chars ({max})"
-        }
+        Msg::ErrContextTooLarge => "context for '{symbol}' exceeds max_context_chars ({max})",
         Msg::ErrParseDraftFromLlm => "could not parse test file from model response",
         Msg::ErrEmptyValidateCommand => "empty validation command",
         Msg::ErrUiBaseUnavailable => "UI base_url {base} unavailable and tests.ui.start is not set",
@@ -381,7 +378,7 @@ Commands:
         Msg::ErrEmbeddingsNoData => "embeddings: no data",
         Msg::ErrEmbeddingsNoEmbedding => "embeddings: no embedding",
         Msg::ErrEmbeddingsDisabled => "embeddings disabled (set [analysis] embeddings = true)",
-        Msg::ErrEmbeddingsModelRequired => "need embeddings_model or llm.model",
+        Msg::ErrEmbeddingsModelRequired => "need embeddings_model or select a chat model",
         Msg::ErrSemanticSearchNeedsEmbeddings => {
             "semantic_search: enable [analysis] embeddings = true and build the index"
         }
@@ -390,5 +387,17 @@ Commands:
         Msg::SessionIdEmpty => "empty session id",
         Msg::SessionIdNoMatch => "no session matching '{prefix}'",
         Msg::SessionIdAmbiguous => "ambiguous session id '{prefix}' ({n} matches)",
+        Msg::ErrNoModels => "no models at endpoint (GET /models returned empty)",
+        Msg::ErrModelNeedsSelection => {
+            "model not set: {count} models available — pick with /model or --model"
+        }
+        Msg::SlashModel => "select LLM model (from /models)",
+        Msg::ModelOverlayTitle => " models  Enter select  r refresh  Esc ",
+        Msg::ModelOverlayEmpty => "(no models)",
+        Msg::ModelSelected => "model: {model}",
+        Msg::ModelSelectHint => "model not set — /model to choose (or --model)",
+        Msg::ModelPersisted => "saved model={model} to {path}",
+        Msg::ModelNotSetBadge => "model?",
+        Msg::ModelBusyReject => "cannot switch model while a job is running",
     }
 }

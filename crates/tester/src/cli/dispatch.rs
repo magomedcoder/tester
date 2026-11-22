@@ -24,11 +24,16 @@ pub fn run() -> StdExitCode {
 
 fn run_cli(cli: Cli) -> Result<ExitCode> {
     let format = cli.format;
+    let model = cli.model.clone();
+    if let Some(m) = model.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        tester_core::config::persist_llm_model(m)?;
+    }
+    let model = model.as_deref();
     let Some(command) = cli.command else {
         return commands::agent::cmd_tui(cli.path, cli.dry_run, cli.session, cli.plain);
     };
     match command {
-        Commands::Test(cmd) => commands::test::dispatch_test(cmd, format),
+        Commands::Test(cmd) => commands::test::dispatch_test(cmd, format, model),
         Commands::Agent {
             path,
             prompt,
@@ -36,13 +41,15 @@ fn run_cli(cli: Cli) -> Result<ExitCode> {
             resume,
             stream,
             no_stream,
-        } => commands::agent::cmd_agent(&path, &prompt, dry_run, resume, stream && !no_stream),
+        } => {
+            commands::agent::cmd_agent(&path, &prompt, dry_run, resume, stream && !no_stream, model)
+        }
         Commands::Chat {
             path,
             dry_run,
             stream,
             no_stream,
-        } => commands::agent::cmd_chat(&path, dry_run, stream && !no_stream),
+        } => commands::agent::cmd_chat(&path, dry_run, stream && !no_stream, model),
         Commands::Sessions { action } => commands::sessions::cmd_sessions(action),
         Commands::Debug {
             path,
@@ -65,10 +72,12 @@ fn run_cli(cli: Cli) -> Result<ExitCode> {
             &kind,
             max_items,
             format,
+            model,
         ),
         Commands::Doctor { path } => commands::doctor::cmd_doctor(&path, format),
+        Commands::Models { path } => commands::models::cmd_models(path),
         Commands::Ui(UiCommands::Init { path }) => commands::ui::cmd_ui_init(&path, format),
         Commands::Ui(UiCommands::Doctor { path }) => commands::ui::cmd_ui_doctor(&path, format),
-        Commands::Security(cmd) => commands::security::dispatch_security(cmd),
+        Commands::Security(cmd) => commands::security::dispatch_security(cmd, model),
     }
 }

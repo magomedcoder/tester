@@ -221,10 +221,7 @@ pub fn resolve_id(prefix: &str) -> Result<String> {
         .filter(|m| m.id.starts_with(prefix))
         .collect::<Vec<_>>();
     match hits.len() {
-        0 => bail!(
-            "{}",
-            i18n::tr(Msg::SessionIdNoMatch, &[("prefix", prefix)])
-        ),
+        0 => bail!("{}", i18n::tr(Msg::SessionIdNoMatch, &[("prefix", prefix)])),
         1 => Ok(hits.remove(0).id),
         _ => bail!(
             "{}",

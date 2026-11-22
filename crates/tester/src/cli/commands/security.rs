@@ -1,5 +1,5 @@
 use crate::cli::args::{OutputFormat, SecurityCommands};
-use crate::cli::helpers::{load_config, need_llm, prepare_project};
+use crate::cli::helpers::{load_config, need_llm_with_model, prepare_project};
 use anyhow::Result;
 use tester_core::error::{AppError, ExitCode};
 use tester_core::i18n::{self, Msg};
@@ -8,7 +8,7 @@ use tester_security::{
     draft_patch, explain, render_json, render_markdown, render_text, scan_with_config,
 };
 
-pub(crate) fn dispatch_security(cmd: SecurityCommands) -> Result<ExitCode> {
+pub(crate) fn dispatch_security(cmd: SecurityCommands, model: Option<&str>) -> Result<ExitCode> {
     match cmd {
         SecurityCommands::Scan {
             path,
@@ -33,7 +33,7 @@ pub(crate) fn dispatch_security(cmd: SecurityCommands) -> Result<ExitCode> {
             llm,
         } => {
             let do_apply = apply || no_dry_run;
-            cmd_patch(&path, &finding, do_apply, deep, llm)
+            cmd_patch(&path, &finding, do_apply, deep, llm, model)
         }
     }
 }
@@ -84,6 +84,7 @@ fn cmd_patch(
     apply: bool,
     deep: bool,
     use_llm: bool,
+    model: Option<&str>,
 ) -> Result<ExitCode> {
     let profile = prepare_project(path)?;
     let mut config = load_config(&profile)?;
@@ -98,7 +99,7 @@ fn cmd_patch(
         })?
         .clone();
     let llm = if use_llm {
-        Some(need_llm(&config)?)
+        Some(need_llm_with_model(&config, model)?)
     } else {
         None
     };

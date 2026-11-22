@@ -12,10 +12,13 @@ Slash и клавиши интерфейса: [ui.md](ui.md).
 | `--format text\|json` | Формат вывода (`text` по умолчанию)                             |
 | `--debug`             | Подробный лог (промпты, HTTP к модели)                          |
 | `--locale en\|ru`     | Язык UI (перебивает `TESTER_LOCALE` / `LANG` / `locale` в toml) |
+| `--model <ID>`        | Выбрать model на этот запуск                                    |
 | `-h`, `--help`        | Справка                                                         |
 | `-V`, `--version`     | Версия                                                          |
 
-Модель, `base_url`, `api_key` и `agent_auto_approve` - в `~/.tester/tester.toml` и/или `<проект>/tester.toml` (`[llm]` / `[run]`; проект перекрывает). Локаль: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` в toml -> `en`.
+`base_url`, `api_key` и `agent_auto_approve` - в `~/.tester/tester.toml` и/или `<проект>/tester.toml` (`[llm]` / `[run]`; проект перекрывает). 
+Model `--model`, `tester models` или TUI `/model` (auto, если на endpoint ровно одна модель; последний выбор в `~/.tester/model`). 
+Локаль: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` в toml -> `en`.
 
 ## Тестовый пайплайн (`tester test ...`)
 
@@ -118,6 +121,15 @@ echo "$TRACE" | tester debug /проект --stdin --reproduce-only
 ```bash
 tester doctor /проект
 tester ui doctor /web-app
+```
+
+## `models`
+
+Список id моделей с `GET {base_url}/models`. Текущая модель (если задана) помечена `*`.
+
+```bash
+tester models
+tester models /путь-проекту
 ```
 
 ## `agent` / `chat`

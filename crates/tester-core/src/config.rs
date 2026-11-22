@@ -114,6 +114,7 @@ fn default_grep_max_hits() -> u32 {
 pub struct LlmConfig {
     #[serde(default = "default_base_url")]
     pub base_url: String,
+    #[serde(skip)]
     pub model: String,
     #[serde(default)]
     pub api_key: Option<String>,
@@ -270,19 +271,12 @@ pub fn tester_home() -> PathBuf {
         .join(".tester")
 }
 
-pub fn global_config_path() -> PathBuf {
-    tester_home().join("tester.toml")
-}
-
-const GLOBAL_CONFIG_TEMPLATE: &str = r#"# Global Tester config (~/.tester/tester.toml or $TESTER_HOME/tester.toml).
-# Project <root>/tester.toml overlays this file (deep merge).
-
+const GLOBAL_CONFIG_TEMPLATE: &str = r#"
 locale = "en"
 
 [llm]
 base_url = "http://127.0.0.1:11434/v1"
-model = ""
-api_key = ""
+# api_key = ""
 
 [run]
 agent_auto_approve = true
@@ -297,7 +291,7 @@ deep = false
 fetch_advisories = false
 "#;
 
-pub fn ensure_global_config() -> Result<PathBuf> {
+pub(crate) fn ensure_global_config() -> Result<PathBuf> {
     let home = tester_home();
     std::fs::create_dir_all(&home).with_context(|| i18n::io_ctx(Msg::IoCreate, &home))?;
     let path = home.join("tester.toml");
@@ -308,12 +302,40 @@ pub fn ensure_global_config() -> Result<PathBuf> {
     Ok(path)
 }
 
+fn llm_model_path() -> PathBuf {
+    tester_home().join("model")
+}
+
+fn load_llm_model() -> Option<String> {
+    let text = std::fs::read_to_string(llm_model_path()).ok()?;
+    let id = text.trim();
+    if id.is_empty() {
+        None
+    } else {
+        Some(id.to_string())
+    }
+}
+
+pub fn persist_llm_model(model: &str) -> Result<PathBuf> {
+    let id = model.trim();
+    if id.is_empty() {
+        anyhow::bail!("{}", i18n::t(Msg::ModelSelectHint));
+    }
+    let home = tester_home();
+    std::fs::create_dir_all(&home).with_context(|| i18n::io_ctx(Msg::IoCreate, &home))?;
+    let path = llm_model_path();
+    let tmp = home.join("model.tmp");
+    std::fs::write(&tmp, format!("{id}\n")).with_context(|| i18n::io_ctx(Msg::IoWrite, &tmp))?;
+    std::fs::rename(&tmp, &path).with_context(|| i18n::io_ctx(Msg::IoWrite, &path))?;
+    Ok(path)
+}
+
 fn read_toml_file(path: &Path) -> Result<Option<toml::Value>> {
     if !path.is_file() {
         return Ok(None);
     }
-    let text = std::fs::read_to_string(path).with_context(|| i18n::io_ctx(Msg::IoRead, &path))?;
-    let value = toml::from_str(&text).with_context(|| i18n::io_ctx(Msg::IoParse, &path))?;
+    let text = std::fs::read_to_string(path).with_context(|| i18n::io_ctx(Msg::IoRead, path))?;
+    let value = toml::from_str(&text).with_context(|| i18n::io_ctx(Msg::IoParse, path))?;
     Ok(Some(value))
 }
 
@@ -372,7 +394,10 @@ impl Config {
                 .with_context(|| format!("разбор конфига (global + {})", workspace.display()))?
         };
 
-        let config = config_from_raw(raw);
+        let mut config = config_from_raw(raw);
+        if let Some(model) = load_llm_model() {
+            config.llm.model = model;
+        }
         crate::i18n::apply_config_locale(config.locale.as_deref());
         Ok(config)
     }
@@ -433,7 +458,6 @@ mod tests {
             f,
             r#"
 [llm]
-model = "demo-model"
 api_key = "sk-test"
 [run]
 repair_attempts = 2
@@ -441,12 +465,44 @@ android_opt_in = true
 "#
         )
         .unwrap();
-        let cfg = with_empty_home(|| Config::load(dir.path()).unwrap());
+        let cfg = with_empty_home(|| {
+            persist_llm_model("demo-model").unwrap();
+            Config::load(dir.path()).unwrap()
+        });
         assert_eq!(cfg.llm.model, "demo-model");
         assert_eq!(cfg.llm.api_key.as_deref(), Some("sk-test"));
         assert_eq!(cfg.run.repair_attempts, 2);
         assert!(cfg.run.android_opt_in);
         assert!(cfg.run.agent_auto_approve);
+    }
+
+    #[test]
+    fn ignores_model_key_in_toml() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut f = std::fs::File::create(dir.path().join("tester.toml")).unwrap();
+        write!(
+            f,
+            r#"
+[llm]
+model = "from-toml"
+api_key = "sk"
+"#
+        )
+        .unwrap();
+        let cfg = with_empty_home(|| Config::load(dir.path()).unwrap());
+        assert!(cfg.llm.model.is_empty());
+        assert_eq!(cfg.llm.api_key.as_deref(), Some("sk"));
+    }
+
+    #[test]
+    fn persist_llm_model_roundtrip() {
+        let home = tempfile::tempdir().unwrap();
+        with_tester_home(home.path(), || {
+            let path = persist_llm_model("qwen2.5").unwrap();
+            assert_eq!(path, home.path().join("model"));
+            assert_eq!(load_llm_model().as_deref(), Some("qwen2.5"));
+            assert!(persist_llm_model("  ").is_err());
+        });
     }
 
     #[test]
@@ -468,7 +524,6 @@ android_opt_in = true
             r#"
 [llm]
 base_url = "http://global:11434/v1"
-model = "global-model"
 api_key = "sk-global"
 [run]
 repair_attempts = 9
@@ -478,17 +533,18 @@ repair_attempts = 9
         std::fs::write(
             project.path().join("tester.toml"),
             r#"
-[llm]
-model = "project-model"
 [run]
 android_opt_in = true
 "#,
         )
         .unwrap();
 
-        let cfg = with_tester_home(home.path(), || Config::load(project.path()).unwrap());
+        let cfg = with_tester_home(home.path(), || {
+            persist_llm_model("runtime-model").unwrap();
+            Config::load(project.path()).unwrap()
+        });
 
-        assert_eq!(cfg.llm.model, "project-model");
+        assert_eq!(cfg.llm.model, "runtime-model");
         assert_eq!(cfg.llm.base_url, "http://global:11434/v1");
         assert_eq!(cfg.llm.api_key.as_deref(), Some("sk-global"));
         assert_eq!(cfg.run.repair_attempts, 9);

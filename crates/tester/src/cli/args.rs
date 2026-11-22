@@ -24,6 +24,9 @@ pub struct Cli {
     #[arg(long, global = true, value_name = "LOCALE")]
     pub locale: Option<String>,
 
+    #[arg(long, global = true, value_name = "MODEL")]
+    pub model: Option<String>,
+
     #[arg(value_name = "PATH")]
     pub path: Option<PathBuf>,
 
@@ -95,6 +98,11 @@ pub enum Commands {
 
     Doctor {
         path: PathBuf,
+    },
+
+    Models {
+        #[arg(value_name = "PATH")]
+        path: Option<PathBuf>,
     },
 
     #[command(subcommand)]

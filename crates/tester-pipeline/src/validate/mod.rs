@@ -99,7 +99,10 @@ fn validate_ui(
             guard.0 = Some(spawn_shell(start, &profile.root)?);
             wait_for_url(&base, Duration::from_secs(45))?;
         } else {
-            bail!("{}", i18n::tr(Msg::ErrUiBaseUnavailable, &[("base", &base)]));
+            bail!(
+                "{}",
+                i18n::tr(Msg::ErrUiBaseUnavailable, &[("base", &base)])
+            );
         }
     }
 

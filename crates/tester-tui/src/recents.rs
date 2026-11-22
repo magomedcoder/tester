@@ -19,12 +19,6 @@ impl Recents {
         if path.is_file() {
             return Self::load_from(&path);
         }
-        let legacy = legacy_store_path();
-        if legacy.is_file() {
-            let recents = Self::load_from(&legacy);
-            let _ = recents.save();
-            return recents;
-        }
         Self::default()
     }
 
@@ -43,10 +37,10 @@ impl Recents {
 
     pub fn save_to(&self, path: &Path) -> Result<()> {
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).with_context(|| i18n::io_ctx(Msg::IoCreate, &parent))?;
+            fs::create_dir_all(parent).with_context(|| i18n::io_ctx(Msg::IoCreate, parent))?;
         }
         let text = serde_json::to_string_pretty(self)?;
-        fs::write(path, text).with_context(|| i18n::io_ctx(Msg::IoWrite, &path))?;
+        fs::write(path, text).with_context(|| i18n::io_ctx(Msg::IoWrite, path))?;
         Ok(())
     }
 
@@ -72,19 +66,6 @@ impl Recents {
 
 pub fn store_path() -> PathBuf {
     tester_core::config::tester_home().join("recents.json")
-}
-
-fn legacy_store_path() -> PathBuf {
-    if let Ok(xdg) = std::env::var("XDG_DATA_HOME") {
-        return PathBuf::from(xdg).join(".tester").join("recents.json");
-    }
-    let home = std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/"));
-    home.join(".local")
-        .join("share")
-        .join(".tester")
-        .join("recents.json")
 }
 
 #[cfg(test)]

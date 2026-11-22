@@ -95,13 +95,21 @@ fn draw_header(frame: &mut Frame<'_>, area: Rect, app: &App, theme: &Theme) {
         Span::styled(format!("v{version}"), theme.muted()),
     ];
     if let Screen::Session(s) = &app.screen {
-        let model = truncate_middle(s.model_name(), 24);
-        if !model.is_empty() {
-            top.push(Span::styled("  ", theme.faint()));
-            top.push(Span::styled(model, theme.accent_style()));
-            top.push(Span::styled(" ", theme.faint()));
-            top.push(Span::styled(s.conn_glyph().to_string(), theme.info_style()));
+        top.push(Span::styled("  ", theme.faint()));
+        let model = s.model_name().trim();
+        if model.is_empty() {
+            top.push(Span::styled(
+                i18n::t(Msg::ModelNotSetBadge),
+                theme.warning_style(),
+            ));
+        } else {
+            top.push(Span::styled(
+                truncate_middle(model, 24),
+                theme.accent_style(),
+            ));
         }
+        top.push(Span::styled(" ", theme.faint()));
+        top.push(Span::styled(s.conn_glyph().to_string(), theme.info_style()));
     }
     if app.dry_run {
         top.push(Span::styled("", theme.faint()));

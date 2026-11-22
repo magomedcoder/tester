@@ -53,7 +53,7 @@ pub fn apply_draft(
     }
 
     if let Some(parent) = abs.parent() {
-        std::fs::create_dir_all(parent).with_context(|| i18n::io_ctx(Msg::IoCreate, &parent))?;
+        std::fs::create_dir_all(parent).with_context(|| i18n::io_ctx(Msg::IoCreate, parent))?;
     }
     std::fs::write(&abs, &final_content).with_context(|| i18n::io_ctx(Msg::IoWrite, &abs))?;
     let _ = cache::invalidate(&profile.root);

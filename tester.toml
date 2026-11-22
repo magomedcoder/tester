@@ -2,8 +2,7 @@ locale = "en"
 
 [llm]
 base_url = "http://127.0.0.1:11434/v1"
-model = ""
-api_key = ""
+# api_key = ""
 
 [run]
 agent_auto_approve = true

@@ -4,12 +4,12 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tester_agent::{AgentContext, open_context_with_policy};
-use tester_core::config::Config;
+use tester_agent::{AgentContext, open_context_ex};
+use tester_core::config::{Config, LlmConfig};
 use tester_core::i18n::{self, Msg};
 use tester_core::model::{ProjectProfile, RunReport, TestKind};
 use tester_lang::discover::discover;
-use tester_llm::{Llm, create_client};
+use tester_llm::{Llm, create_client_with_model, ensure_llm_config};
 use tester_pipeline::plan::PlanOptions;
 use tester_pipeline::report::{render_json, render_markdown};
 use tracing::level_filters::LevelFilter;
@@ -62,8 +62,25 @@ pub(crate) fn load_config(profile: &ProjectProfile) -> Result<Config> {
     Config::load(&profile.root)
 }
 
-pub(crate) fn need_llm(config: &Config) -> Result<Arc<dyn Llm>> {
-    create_client(&config.llm).with_context(|| i18n::t(Msg::LlmClientCreate))
+pub(crate) fn need_llm_with_model(
+    config: &Config,
+    model_override: Option<&str>,
+) -> Result<Arc<dyn Llm>> {
+    let mut llm_cfg: LlmConfig = config.llm.clone();
+    let had_model = !llm_cfg.model.trim().is_empty();
+    let explicit = model_override
+        .map(str::trim)
+        .filter(|m| !m.is_empty())
+        .map(str::to_string);
+    if let Some(m) = &explicit {
+        llm_cfg.model = m.clone();
+    }
+    let cfg = ensure_llm_config(llm_cfg).with_context(|| i18n::t(Msg::LlmClientCreate))?;
+    let should_persist = explicit.is_some() || (!had_model && !cfg.model.trim().is_empty());
+    if should_persist {
+        tester_core::config::persist_llm_model(&cfg.model)?;
+    }
+    create_client_with_model(&cfg).with_context(|| i18n::t(Msg::LlmClientCreate))
 }
 
 pub(crate) fn apply_config_flags(profile: &mut ProjectProfile, config: &Config) {
@@ -75,8 +92,13 @@ pub(crate) fn apply_config_flags(profile: &mut ProjectProfile, config: &Config) 
     }
 }
 
-pub(crate) fn build_agent_ctx(path: &PathBuf, dry_run: bool, stream: bool) -> Result<AgentContext> {
-    open_context_with_policy(path, dry_run, stream, false)
+pub(crate) fn build_agent_ctx(
+    path: &PathBuf,
+    dry_run: bool,
+    stream: bool,
+    model_override: Option<&str>,
+) -> Result<AgentContext> {
+    open_context_ex(path, dry_run, stream, false, model_override)
 }
 
 pub(crate) fn mirror_cancel(flag: Arc<AtomicBool>) {

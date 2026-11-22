@@ -125,7 +125,12 @@ impl Tool for WriteTest {
             .iter()
             .find(|i| i.gap.symbol.name == symbol && (kind == TestKind::All || i.kind == kind))
             .cloned()
-            .ok_or_else(|| anyhow!("{}", i18n::tr(Msg::ErrPlanSymbolNotFound, &[("symbol", &symbol)])))?;
+            .ok_or_else(|| {
+                anyhow!(
+                    "{}",
+                    i18n::tr(Msg::ErrPlanSymbolNotFound, &[("symbol", &symbol)])
+                )
+            })?;
         let draft = generate_draft(ctx.llm.as_ref(), &ctx.profile, &ctx.config, &item)?;
         let write = !ctx.dry_run;
         let out = apply_draft(&ctx.profile, &draft, write, update)?;

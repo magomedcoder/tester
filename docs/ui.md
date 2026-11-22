@@ -17,22 +17,17 @@ tester /path/to/project --plain
 | `--session` | Open a stored chat by id (or unique prefix)            |
 | `--plain`   | Use classic `chat` REPL instead of TUI                 |
 
-## Picker
-
-| Key                     | Action                           |
-| ----------------------- | -------------------------------- |
-| `Up` / `Down`           | Navigate the list                |
-| `Enter`                 | Enter folder                     |
-| `Right`                 | Worktrees of the current repo    |
-| `Left`                  | Back to folders (from worktrees) |
-| `Ctrl+Enter` / `Ctrl+S` | Open selected project            |
-| `Esc`                   | Back / cancel                    |
-| `Ctrl+O` (from session) | Open picker again                |
-
 ## Session keys
 
 | Key                                     | Action                                |
 | --------------------------------------- | ------------------------------------- |
+| `Up` / `Down`                           | Navigate the list                     |
+| `Enter`                                 | Enter folder                          |
+| `Right`                                 | Worktrees of the current repo         |
+| `Left`                                  | Back to folders (from worktrees)      |
+| `Ctrl+Enter` / `Ctrl+S`                 | Open selected project                 |
+| `Esc`                                   | Back / cancel                         |
+| `Ctrl+O` (from session)                 | Open picker again                     |
 | `Enter`                                 | Send message                          |
 | `Shift+Enter` / `Ctrl+Enter` / `Ctrl+J` | Newline in the composer               |
 | `Esc` `Esc`                             | Cancel job / close overlay            |
@@ -94,6 +89,7 @@ Typing `/` opens the palette (`↑↓` `Tab` `Enter`). Full list:
 | `/prune all`           | Delete all stored sessions                                    |
 | `/diff`                | View `git diff`                                               |
 | `/branch`              | Switch git branch                                             |
+| `/model` [filter]      | Pick LLM model                                                |
 | `/security`            | Security scan (overlay)                                       |
 | `/security deep`       | Deep scan (taint)                                             |
-| `/exit`                | Leave the session (`/quit`, `/q`)                             |
+| `/exit`                | Leave the session                                             |

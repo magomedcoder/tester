@@ -3,8 +3,8 @@ use crate::composer::{PromptFrame, normalize_paste};
 use crate::files::{active_at_needle, extract_at_specs, list_at_candidates, read_attach_snippet};
 use crate::health::HealthProbe;
 use crate::overlays::{
-    BranchOverlay, ChatSessionsOverlay, DiffOverlay, ManualOverlay, Overlay, OverlayAction,
-    PlanDecision, PlanOverlay, SecurityOverlay, SessionListOverlay,
+    BranchOverlay, ChatSessionsOverlay, DiffOverlay, ManualOverlay, ModelOverlay, Overlay,
+    OverlayAction, PlanDecision, PlanOverlay, SecurityOverlay, SessionListOverlay,
 };
 use crate::popup::{Popup, PopupItem, draw_popup, place_above, popup_height};
 use crate::theme::{Theme, truncate_middle};
@@ -25,8 +25,8 @@ use std::time::{Duration, Instant};
 use tester_agent::facade::{build_and_save_plan, build_plan};
 use tester_agent::session_store::{self, PruneSpec};
 use tester_agent::{
-    AgentOutcome, AgentSession, PermissionPolicy, RunOneShotOpts, open_context_with_policy,
-    run_one_shot_ex,
+    AgentOutcome, AgentSession, PermissionPolicy, RunOneShotOpts, open_context_ex,
+    open_context_with_policy, run_one_shot_ex,
 };
 use tester_core::config::Config;
 use tester_core::i18n::{self, Msg};
@@ -59,6 +59,7 @@ const SLASH_CMDS: &[&str] = &[
     "branch",
     "propose_plan",
     "security",
+    "model",
 ];
 
 fn slash_desc(cmd: &str) -> &'static str {
@@ -86,6 +87,7 @@ fn slash_desc(cmd: &str) -> &'static str {
         "branch" => i18n::t(Msg::SlashBranch),
         "propose_plan" => i18n::t(Msg::SlashProposePlan),
         "security" => i18n::t(Msg::SlashSecurity),
+        "model" => i18n::t(Msg::SlashModel),
         _ => "",
     }
 }
@@ -226,6 +228,10 @@ impl SessionScreen {
                         ));
                         screen.status_error = true;
                     }
+                }
+                if screen.model.trim().is_empty() {
+                    screen.status = i18n::t(Msg::ModelSelectHint).into();
+                    screen.open_model_overlay(None);
                 }
                 screen.update_ghost();
             }
@@ -783,7 +789,63 @@ impl SessionScreen {
                 self.overlay = None;
                 SessionAction::None
             }
+            OverlayAction::SelectModel(id) => {
+                self.overlay = None;
+                if self.job.is_some() {
+                    self.push_system(i18n::t(Msg::ModelBusyReject).into());
+                    return SessionAction::None;
+                }
+                match tester_core::config::persist_llm_model(&id) {
+                    Ok(path) => {
+                        self.model = id.clone();
+                        self.push_system(i18n::tr(
+                            Msg::ModelPersisted,
+                            &[("model", &id), ("path", &path.display().to_string())],
+                        ));
+                        self.status = i18n::tr(Msg::ModelSelected, &[("model", &id)]);
+                        self.status_error = false;
+                    }
+                    Err(err) => {
+                        self.push_system(format!("{err:#}"));
+                        self.status_error = true;
+                    }
+                }
+                SessionAction::None
+            }
         }
+    }
+
+    fn open_model_overlay(&mut self, filter: Option<&str>) {
+        let llm = Config::load(&self.path)
+            .map(|c| {
+                let mut llm = c.llm;
+                if llm.base_url.trim().is_empty() && !self.base_url.is_empty() {
+                    llm.base_url = self.base_url.clone();
+                }
+                if llm.model.trim().is_empty() && !self.model.is_empty() {
+                    llm.model = self.model.clone();
+                }
+                llm
+            })
+            .unwrap_or_else(|_| tester_core::config::LlmConfig {
+                base_url: if self.base_url.is_empty() {
+                    "http://127.0.0.1:11434/v1".into()
+                } else {
+                    self.base_url.clone()
+                },
+                model: self.model.clone(),
+                api_key: None,
+                max_tokens: 4096,
+                timeout_secs: 120,
+            });
+        let mut overlay = ModelOverlay::fetch(&llm);
+        if let Some(f) = filter {
+            if !f.is_empty() {
+                overlay.filter = f.to_string();
+                overlay.selected = 0;
+            }
+        }
+        self.overlay = Some(Overlay::Model(overlay));
     }
 
     fn at_needle_open(&self) -> bool {
@@ -1115,6 +1177,14 @@ impl SessionScreen {
                 self.overlay = Some(Overlay::Security(SecurityOverlay::scan(&self.path, deep)));
             }
             "branch" => self.overlay = Some(Overlay::Branch(BranchOverlay::from_git(&self.path))),
+            "model" => {
+                let filter = cmd.strip_prefix("model").unwrap_or("").trim();
+                self.open_model_overlay(if filter.is_empty() {
+                    None
+                } else {
+                    Some(filter)
+                });
+            }
             other => self.push_system(format!("/{other}: {}", i18n::t(Msg::SessionUnknownCmd))),
         }
         SessionAction::None
@@ -1153,8 +1223,24 @@ impl SessionScreen {
         }
     }
 
+    fn require_model(&mut self) -> bool {
+        if self.model.trim().is_empty() {
+            self.push_system(i18n::t(Msg::ModelSelectHint).into());
+            self.status = i18n::t(Msg::ModelSelectHint).into();
+            self.status_error = true;
+            self.open_model_overlay(None);
+            false
+        } else {
+            true
+        }
+    }
+
     fn run_analysis_tool(&mut self, name: &str, args: serde_json::Value) {
-        match open_context_with_policy(&self.path, true, false, true) {
+        if !self.require_model() {
+            return;
+        }
+        let model = self.model.clone();
+        match open_context_ex(&self.path, true, false, true, Some(&model)) {
             Ok(ctx) => match tester_agent::tools::default_registry(&ctx)
                 .get(name)
                 .map(|t| t.execute(&ctx, &args))
@@ -1181,7 +1267,11 @@ impl SessionScreen {
     }
 
     fn start_agent(&mut self, prompt: String) {
+        if !self.require_model() {
+            return;
+        }
         let path = self.path.clone();
+        let model = self.model.clone();
         let dry_run = self.dry_run;
         let cancel = Arc::new(AtomicBool::new(false));
         let cancel_job = Arc::clone(&cancel);
@@ -1201,7 +1291,7 @@ impl SessionScreen {
         self.status_error = false;
         thread::spawn(move || {
             let result = (|| {
-                let mut ctx = open_context_with_policy(&path, dry_run, true, true)?;
+                let mut ctx = open_context_ex(&path, dry_run, true, true, Some(&model))?;
                 ctx.cancel = cancel_job;
                 if !ctx.yes && !dry_run {
                     let perm_tx = perm_tx;

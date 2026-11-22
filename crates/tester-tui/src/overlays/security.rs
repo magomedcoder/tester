@@ -65,7 +65,7 @@ impl SecurityOverlay {
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title(format!(" {} Esc/q ", self.title.trim()))
+                        .title(format!(" {} Esc/exit ", self.title.trim()))
                         .border_style(theme.border_block(true))
                         .style(theme.base()),
                 ),

@@ -13,8 +13,9 @@ pub(crate) fn cmd_agent(
     dry_run: bool,
     resume: bool,
     stream: bool,
+    model: Option<&str>,
 ) -> Result<ExitCode> {
-    let ctx = build_agent_ctx(path, dry_run, stream)?;
+    let ctx = build_agent_ctx(path, dry_run, stream, model)?;
     mirror_cancel(Arc::clone(&ctx.cancel));
 
     let outcome = run_one_shot(&ctx, prompt, resume)?;
@@ -44,8 +45,13 @@ pub(crate) fn cmd_agent(
     })
 }
 
-pub(crate) fn cmd_chat(path: &PathBuf, dry_run: bool, stream: bool) -> Result<ExitCode> {
-    let ctx = build_agent_ctx(path, dry_run, stream)?;
+pub(crate) fn cmd_chat(
+    path: &PathBuf,
+    dry_run: bool,
+    stream: bool,
+    model: Option<&str>,
+) -> Result<ExitCode> {
+    let ctx = build_agent_ctx(path, dry_run, stream, model)?;
     mirror_cancel(Arc::clone(&ctx.cancel));
     run_repl(&ctx)?;
     Ok(ExitCode::OK)
@@ -59,7 +65,7 @@ pub(crate) fn cmd_tui(
 ) -> Result<ExitCode> {
     if plain {
         let path = path.ok_or(AppError::PlainNeedsPath)?;
-        return cmd_chat(&path, dry_run, true);
+        return cmd_chat(&path, dry_run, true, None);
     }
     tester_tui::run(tester_tui::TuiOptions {
         path,

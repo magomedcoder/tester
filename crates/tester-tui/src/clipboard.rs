@@ -1,6 +1,6 @@
 use std::process::{Command, Stdio};
 
-pub fn read() -> Option<String> {
+fn read() -> Option<String> {
     pipe_read(&[
         ("wl-paste", &["-n"]),
         ("xclip", &["-selection", "clipboard", "-o"]),

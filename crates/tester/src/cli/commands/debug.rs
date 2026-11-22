@@ -1,6 +1,6 @@
 use crate::cli::args::OutputFormat;
 use crate::cli::helpers::{
-    apply_config_flags, emit_report, load_config, need_llm, parse_kind, prepare_project,
+    apply_config_flags, emit_report, load_config, need_llm_with_model, parse_kind, prepare_project,
 };
 use anyhow::Result;
 use std::path::{Path, PathBuf};
@@ -18,12 +18,13 @@ pub(crate) fn cmd_debug(
     kind: &str,
     max_items: usize,
     format: OutputFormat,
+    model: Option<&str>,
 ) -> Result<ExitCode> {
     let bug_text = tester_pipeline::debug::read_bug_input(bug, bug_file, stdin)?;
     let mut profile = prepare_project(path)?;
     let config = load_config(&profile)?;
     apply_config_flags(&mut profile, &config);
-    let llm = need_llm(&config)?;
+    let llm = need_llm_with_model(&config, model)?;
     let opts = tester_pipeline::debug::DebugOptions {
         bug_text,
         reproduce_only,

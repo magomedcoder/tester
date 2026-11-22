@@ -294,7 +294,6 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::DoctorNotRequired => "не требуется",
         Msg::DoctorGradlewFound => "gradlew найден; connectedAndroidTest потребует device/emulator",
         Msg::DoctorGradlewMissing => "gradlew не найден",
-        Msg::DoctorHttp => "HTTP {status} @ {url}",
         Msg::DoctorUiState => "framework={framework} ready={ready}",
         Msg::DoctorSecurityRules => "правил: {n}, enabled={enabled}, deep={deep}",
         Msg::SecReportTitle => "# Отчёт безопасности",
@@ -346,14 +345,10 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::NoteVenv => "найден .venv",
         Msg::NoteLaravel => "обнаружен Laravel",
 
-        Msg::ErrContextTooLarge => {
-            "контекст для '{symbol}' превышает max_context_chars ({max})"
-        }
+        Msg::ErrContextTooLarge => "контекст для '{symbol}' превышает max_context_chars ({max})",
         Msg::ErrParseDraftFromLlm => "не удалось разобрать тестовый файл из ответа модели",
         Msg::ErrEmptyValidateCommand => "пустая команда проверки",
-        Msg::ErrUiBaseUnavailable => {
-            "UI base_url {base} недоступен, а tests.ui.start не задан"
-        }
+        Msg::ErrUiBaseUnavailable => "UI base_url {base} недоступен, а tests.ui.start не задан",
         Msg::ErrUiStartEarly => "команда старта UI завершилась рано с {status}: {start}",
         Msg::ErrWaitUrlTimeout => "таймаут ожидания {url}",
         Msg::ErrValidateTimeout => "проверка превысила таймаут {secs}с",
@@ -369,9 +364,7 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::ErrToolArgRequired => "нужен аргумент '{key}' (string)",
         Msg::ErrPlanSymbolNotFound => "символ '{symbol}' не найден в плане",
         Msg::ErrNoPlanItemForSymbol => "нет plan item для {symbol}",
-        Msg::ErrNoLastRepairJson => {
-            "нет .tester/last_repair.json - сначала run_tests с падением"
-        }
+        Msg::ErrNoLastRepairJson => "нет .tester/last_repair.json - сначала run_tests с падением",
         Msg::ErrEmptyAdapterArgv => "пустой argv адаптера",
         Msg::ErrDockerDisabled => "docker отключён: run.allow_docker=false",
         Msg::ErrDockerUnavailable => "docker недоступен: {detail}",
@@ -383,7 +376,7 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::ErrEmbeddingsNoData => "embeddings: нет data",
         Msg::ErrEmbeddingsNoEmbedding => "embeddings: нет embedding",
         Msg::ErrEmbeddingsDisabled => "embeddings выключены ([analysis] embeddings = true)",
-        Msg::ErrEmbeddingsModelRequired => "нужен embeddings_model или llm.model",
+        Msg::ErrEmbeddingsModelRequired => "нужен embeddings_model или выбранная chat-модель",
         Msg::ErrSemanticSearchNeedsEmbeddings => {
             "semantic_search: включите [analysis] embeddings = true и постройте индекс"
         }
@@ -392,5 +385,17 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::SessionIdEmpty => "пустой id сессии",
         Msg::SessionIdNoMatch => "нет сессии по префиксу '{prefix}'",
         Msg::SessionIdAmbiguous => "неоднозначный id сессии '{prefix}' ({n} совпадений)",
+        Msg::ErrNoModels => "на endpoint нет моделей (GET /models пустой)",
+        Msg::ErrModelNeedsSelection => {
+            "model не задан: доступно {count} — выберите /model или --model"
+        }
+        Msg::SlashModel => "выбрать LLM model (из /models)",
+        Msg::ModelOverlayTitle => " модели  Enter выбрать  r обновить  Esc ",
+        Msg::ModelOverlayEmpty => "(нет моделей)",
+        Msg::ModelSelected => "model: {model}",
+        Msg::ModelSelectHint => "model не задан — /model для выбора (или --model)",
+        Msg::ModelPersisted => "сохранено model={model} в {path}",
+        Msg::ModelNotSetBadge => "model?",
+        Msg::ModelBusyReject => "нельзя сменить model пока идёт задача",
     }
 }

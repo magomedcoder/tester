@@ -26,19 +26,35 @@ impl ExitCode {
 pub enum AppError {
     NoGoals,
     LlmUnavailable,
-    PathEscapesRoot { path: String },
-    PathForbidden { detail: String },
+    PathEscapesRoot {
+        path: String,
+    },
+    PathForbidden {
+        detail: String,
+    },
     PathNeedsUpdate,
-    ManifestWriteRefused { name: String },
+    ManifestWriteRefused {
+        name: String,
+    },
     GateNoAssertion,
     GateWeakTest,
     GateForbiddenNetwork,
     GateUnitNetwork,
     PlainNeedsPath,
     PruneNeedsArg,
-    PlanItemNotFound { symbol: String },
-    FindingNotFound { id: String },
-    UnsupportedLanguage { lang: String },
+    PlanItemNotFound {
+        symbol: String,
+    },
+    FindingNotFound {
+        id: String,
+    },
+    UnsupportedLanguage {
+        lang: String,
+    },
+    NoModels,
+    ModelNeedsSelection {
+        count: usize,
+    },
 }
 
 impl fmt::Display for AppError {
@@ -71,6 +87,11 @@ impl fmt::Display for AppError {
             Self::UnsupportedLanguage { lang } => {
                 write!(f, "{}: {lang}", i18n::t(Msg::UnsupportedLanguage))
             }
+            Self::NoModels => f.write_str(i18n::t(Msg::ErrNoModels)),
+            Self::ModelNeedsSelection { count } => f.write_str(&i18n::tr(
+                Msg::ErrModelNeedsSelection,
+                &[("count", &count.to_string())],
+            )),
         }
     }
 }
@@ -87,6 +108,7 @@ impl AppError {
             | Self::PathNeedsUpdate
             | Self::ManifestWriteRefused { .. }
             | Self::GateForbiddenNetwork => ExitCode::PATH_POLICY,
+            Self::NoModels | Self::ModelNeedsSelection { .. } => ExitCode::LLM_UNAVAILABLE,
             Self::GateNoAssertion
             | Self::GateWeakTest
             | Self::GateUnitNetwork

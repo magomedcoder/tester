@@ -100,15 +100,10 @@ impl Tool for DockerInfo {
         let _ = Duration::from_secs(15);
         let output = cmd.output()?;
         if !output.status.success() {
+            let detail = String::from_utf8_lossy(&output.stderr);
             bail!(
                 "{}",
-                i18n::tr(
-                    Msg::ErrDockerUnavailable,
-                    &[(
-                        "detail",
-                        &String::from_utf8_lossy(&output.stderr).into_owned(),
-                    )],
-                )
+                i18n::tr(Msg::ErrDockerUnavailable, &[("detail", &detail)])
             );
         }
         let ver = String::from_utf8_lossy(&output.stdout).trim().to_string();
