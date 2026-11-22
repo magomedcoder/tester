@@ -1,6 +1,7 @@
 use super::AnalysisHit;
 use anyhow::{Result, bail};
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::Symbol;
 
 pub fn expand_context(
@@ -12,7 +13,7 @@ pub fn expand_context(
 ) -> Result<String> {
     let abs = root.join(path);
     if !abs.exists() {
-        bail!("файл не найден: {path}");
+        bail!("{}", i18n::tr(Msg::ErrFileNotFound, &[("path", path)]));
     }
     let text = std::fs::read_to_string(&abs)?;
     let lines: Vec<&str> = text.lines().collect();
@@ -113,7 +114,7 @@ pub fn read_range(root: &Path, path: &str, start_line: usize, end_line: usize) -
 
 pub fn outline_as_text(hits: &[AnalysisHit]) -> String {
     if hits.is_empty() {
-        return "(нет символов)".into();
+        return tester_core::i18n::t(tester_core::i18n::Msg::OutlineNoSymbols).into();
     }
     let mut out = String::new();
     for h in hits {

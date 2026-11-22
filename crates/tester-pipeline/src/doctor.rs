@@ -3,6 +3,7 @@ use serde_json::json;
 use std::path::Path;
 use std::process::Command;
 use tester_core::config::Config;
+use tester_core::i18n::{self, Msg};
 use tester_core::model::ProjectProfile;
 use tester_lang::adapter;
 use tester_lang::discover::discover;
@@ -69,6 +70,18 @@ pub fn run_doctor(path: &Path) -> Result<DoctorReport> {
     if config.run.android_opt_in {
         checks.push(check_android(&profile));
     }
+    checks.push((
+        "security_rules".into(),
+        true,
+        i18n::tr(
+            Msg::DoctorSecurityRules,
+            &[
+                ("n", &tester_security::rules_loaded_count().to_string()),
+                ("enabled", &config.security.enabled.to_string()),
+                ("deep", &config.security.deep.to_string()),
+            ],
+        ),
+    ));
 
     Ok(DoctorReport { checks })
 }
@@ -136,7 +149,13 @@ fn check_llm(config: &Config) -> (String, bool, String) {
         Ok(resp) => (
             "llm".into(),
             false,
-            format!("HTTP {} @ {}", resp.status(), config.llm.base_url),
+            i18n::tr(
+                Msg::DoctorHttp,
+                &[
+                    ("status", &resp.status().to_string()),
+                    ("url", &config.llm.base_url),
+                ],
+            ),
         ),
         Err(e) => (
             "llm".into(),
@@ -148,7 +167,11 @@ fn check_llm(config: &Config) -> (String, bool, String) {
 
 fn check_toolchain(profile: &ProjectProfile) -> (String, bool, String) {
     let Ok(adapter) = adapter::adapter_for(profile.language) else {
-        return ("toolchain".into(), false, "нет адаптера".into());
+        return (
+            "toolchain".into(),
+            false,
+            i18n::t(Msg::DoctorNoAdapter).into(),
+        );
     };
     let bin = adapter.toolchain_bin(profile);
     let ok = which_ok(bin) || profile.root.join(bin).exists() || bin.starts_with("./");
@@ -161,7 +184,7 @@ fn check_toolchain(profile: &ProjectProfile) -> (String, bool, String) {
 
 fn check_ui(profile: &ProjectProfile) -> (String, bool, String) {
     if !profile.capabilities.ui {
-        return ("ui".into(), true, "не требуется".into());
+        return ("ui".into(), true, i18n::t(Msg::DoctorNotRequired).into());
     }
     let ready = profile.ui_ready
         || profile.root.join("playwright.config.ts").exists()
@@ -169,9 +192,12 @@ fn check_ui(profile: &ProjectProfile) -> (String, bool, String) {
     (
         "ui".into(),
         ready,
-        format!(
-            "framework={:?} ready={}",
-            profile.ui_framework, profile.ui_ready
+        i18n::tr(
+            Msg::DoctorUiState,
+            &[
+                ("framework", &format!("{:?}", profile.ui_framework)),
+                ("ready", &profile.ui_ready.to_string()),
+            ],
         ),
     )
 }
@@ -204,9 +230,9 @@ fn check_android(profile: &ProjectProfile) -> (String, bool, String) {
         "android".into(),
         gradlew,
         if gradlew {
-            "gradlew найден; connectedAndroidTest потребует device/emulator".into()
+            i18n::t(Msg::DoctorGradlewFound).into()
         } else {
-            "gradlew не найден".into()
+            i18n::t(Msg::DoctorGradlewMissing).into()
         },
     )
 }

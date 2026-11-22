@@ -2,10 +2,10 @@ use crate::cli::args::{OutputFormat, TestCommands};
 use crate::cli::helpers::{
     apply_config_flags, emit_report, load_config, need_llm, parse_kind, plan_opts, prepare_project,
 };
-use anyhow::{Result, anyhow, bail};
+use anyhow::Result;
 use std::path::PathBuf;
 use tester_core::config::Config;
-use tester_core::error::ExitCode;
+use tester_core::error::{AppError, ExitCode};
 use tester_core::i18n::{self, Msg};
 use tester_core::model::{ItemStatus, RunReport};
 use tester_lang::discover::discover;
@@ -183,7 +183,7 @@ pub(crate) fn cmd_generate(
     apply_config_flags(&mut profile, &config);
     let plan = build_plan_with(&profile, &config, kind, &opts)?;
     if plan.items.is_empty() {
-        eprintln!("нет целей");
+        eprintln!("{}", i18n::t(Msg::NoGoals));
         return Ok(ExitCode::NO_GOALS);
     }
     let llm = need_llm(&config)?;
@@ -222,7 +222,7 @@ pub(crate) fn cmd_generate(
                         attempts: 0,
                         status: ItemStatus::Written,
                         command: String::new(),
-                        message: "записан".into(),
+                        message: i18n::t(Msg::ItemWritten).into(),
                         trace_path: None,
                         first_pass: None,
                         assert_density: None,
@@ -250,7 +250,7 @@ pub(crate) fn cmd_generate(
                     || err.to_string().contains("HTTP")
                     || err.to_string().contains("connect")
                 {
-                    return Err(err.context("llm недоступна"));
+                    return Err(err.context(AppError::LlmUnavailable));
                 }
                 report.warnings.push(err.to_string());
             }
@@ -275,11 +275,10 @@ pub(crate) fn cmd_run(
         profile.package_filter = Some(pkg);
     }
     if !profile.supported {
-        bail!(
-            "{}: {}",
-            i18n::t(Msg::UnsupportedLanguage),
-            profile.language.as_str()
-        );
+        return Err(AppError::UnsupportedLanguage {
+            lang: profile.language.as_str().to_string(),
+        }
+        .into());
     }
     let config = load_config(&profile)?;
     apply_config_flags(&mut profile, &config);
@@ -291,10 +290,10 @@ pub(crate) fn cmd_run(
         eprintln!("{}", i18n::t(Msg::NoGoals));
         return Ok(ExitCode::NO_GOALS);
     }
-    let llm = need_llm(&config).map_err(|e| e.context(i18n::t(Msg::LlmUnavailable)))?;
+    let llm = need_llm(&config).map_err(|e| e.context(AppError::LlmUnavailable))?;
     eprintln!(
-        "| plan -> generate -> validate -> repair ({})",
-        plan.items.len()
+        "{}",
+        i18n::tr(Msg::PlanProgress, &[("n", &plan.items.len().to_string())])
     );
     let items = run_plan(llm.as_ref(), &profile, &config, &plan, write, update)?;
     let mut report = RunReport {
@@ -317,7 +316,9 @@ pub(crate) fn cmd_repair(path: &PathBuf, format: OutputFormat) -> Result<ExitCod
         .iter()
         .find(|i| i.gap.symbol.name == state.item_symbol)
         .cloned()
-        .ok_or_else(|| anyhow!("элемент плана '{}' не найден для repair", state.item_symbol))?;
+        .ok_or_else(|| AppError::PlanItemNotFound {
+            symbol: state.item_symbol.clone(),
+        })?;
 
     let report_item = {
         apply_draft(&profile, &state.draft, true, true)?;
@@ -342,7 +343,7 @@ pub(crate) fn cmd_repair(path: &PathBuf, format: OutputFormat) -> Result<ExitCod
                     attempts,
                     status: ItemStatus::Passed,
                     command: result.command,
-                    message: "пройден".into(),
+                    message: i18n::t(Msg::ItemPassed).into(),
                     trace_path: result.trace_path,
                     first_pass: None,
                     assert_density: None,
@@ -424,7 +425,7 @@ pub(crate) fn cmd_plan_show(path: &PathBuf, format: OutputFormat) -> Result<Exit
                 );
             }
             if plan.items.is_empty() {
-                println!("нет целей в .tester/plan.json");
+                println!("{}", i18n::t(Msg::PlanShowEmpty));
             }
         }
     }

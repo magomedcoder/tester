@@ -3,6 +3,7 @@ use crate::index::iter_source_files;
 use anyhow::Result;
 use regex::Regex;
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::*;
 
 pub struct PhpAdapter;
@@ -53,7 +54,7 @@ impl LanguageAdapter for PhpAdapter {
                 .push("нет vendor/; перед проверкой выполните composer install".into());
         }
         if is_laravel {
-            p.notes.push("обнаружен Laravel".into());
+            p.notes.push(i18n::t(Msg::NoteLaravel).into());
         }
         p.capabilities = Capabilities {
             unit: true,

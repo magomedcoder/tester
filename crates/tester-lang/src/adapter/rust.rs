@@ -2,6 +2,7 @@ use super::LanguageAdapter;
 use crate::index;
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::*;
 
 pub struct RustAdapter;
@@ -17,8 +18,8 @@ impl LanguageAdapter for RustAdapter {
 
     fn discover(&self, root: &Path) -> Result<ProjectProfile> {
         let cargo = root.join("Cargo.toml");
-        let text = std::fs::read_to_string(&cargo)
-            .with_context(|| format!("чтение {}", cargo.display()))?;
+        let text =
+            std::fs::read_to_string(&cargo).with_context(|| i18n::io_ctx(Msg::IoRead, &cargo))?;
         let value: toml::Value = toml::from_str(&text)?;
 
         let package_name = value

@@ -5,6 +5,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use tester_core::config::{AnalysisConfig, LlmConfig};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::Symbol;
 use tester_core::security::skip_dir_name;
 use walkdir::WalkDir;
@@ -165,19 +166,25 @@ fn embed_texts(llm: &LlmConfig, model: &str, texts: &[String]) -> Result<Vec<Vec
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().unwrap_or_default();
-        bail!("embeddings HTTP {status}: {text}");
+        bail!(
+            "{}",
+            i18n::tr(
+                Msg::ErrEmbeddingsHttp,
+                &[("status", &status.to_string()), ("detail", &text)],
+            )
+        );
     }
     let v: serde_json::Value = resp.json()?;
     let data = v
         .get("data")
         .and_then(|d| d.as_array())
-        .ok_or_else(|| anyhow::anyhow!("embeddings: нет data"))?;
+        .ok_or_else(|| anyhow::anyhow!(i18n::t(Msg::ErrEmbeddingsNoData)))?;
     let mut out = Vec::with_capacity(data.len());
     for item in data {
         let emb = item
             .get("embedding")
             .and_then(|e| e.as_array())
-            .ok_or_else(|| anyhow::anyhow!("embeddings: нет embedding"))?
+            .ok_or_else(|| anyhow::anyhow!(i18n::t(Msg::ErrEmbeddingsNoEmbedding)))?
             .iter()
             .filter_map(|x| x.as_f64().map(|f| f as f32))
             .collect();
@@ -193,11 +200,11 @@ pub fn build_embeddings(
     analysis: &AnalysisConfig,
 ) -> Result<usize> {
     if !analysis.embeddings {
-        bail!("embeddings выключены ([analysis] embeddings = true)");
+        bail!("{}", i18n::t(Msg::ErrEmbeddingsDisabled));
     }
     let model = if analysis.embeddings_model.is_empty() {
         if llm.model.is_empty() {
-            bail!("нужен embeddings_model или llm.model");
+            bail!("{}", i18n::t(Msg::ErrEmbeddingsModelRequired));
         }
         llm.model.clone()
     } else {
@@ -268,7 +275,7 @@ pub fn semantic_search(
     symbols: &[Symbol],
 ) -> Result<String> {
     if !analysis.embeddings {
-        bail!("semantic_search: включите [analysis] embeddings = true и постройте индекс");
+        bail!("{}", i18n::t(Msg::ErrSemanticSearchNeedsEmbeddings));
     }
     let path = store_path(root);
     if !path.exists() {

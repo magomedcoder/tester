@@ -5,6 +5,8 @@ use serde_json::json;
 use std::io::{BufRead, BufReader, Read};
 use std::time::Duration;
 use tester_core::config::LlmConfig;
+use tester_core::error::AppError;
+use tester_core::i18n::{self, Msg};
 use tracing::{debug, info, warn};
 
 pub(crate) struct CompatClient {
@@ -55,18 +57,36 @@ impl CompatClient {
                     let code = status.as_u16();
                     if code == 401 || code == 403 {
                         let text = resp.text().unwrap_or_default();
-                        bail!("llm HTTP {status}: доступ запрещён: {text}");
+                        bail!(
+                            "{}",
+                            i18n::tr(
+                                Msg::ErrLlmAccessDenied,
+                                &[
+                                    ("status", &status.to_string()),
+                                    ("detail", &text),
+                                ],
+                            )
+                        );
                     }
                     if code == 429 || status.is_server_error() {
                         warn!(%status, attempt, "повторяемый статус llm");
-                        last_err = Some(anyhow!("llm HTTP {status}"));
+                        last_err = Some(anyhow!(
+                            "{}",
+                            i18n::tr(Msg::ErrLlmHttpStatus, &[("status", &status.to_string())])
+                        ));
                         let backoff = 200u64.saturating_mul(1u64 << (attempt - 1).min(4));
                         std::thread::sleep(Duration::from_millis(backoff));
                         continue;
                     }
                     if !status.is_success() {
                         let text = resp.text().unwrap_or_default();
-                        bail!("llm HTTP {status}: {text}");
+                        bail!(
+                            "{}",
+                            i18n::tr(
+                                Msg::ErrLlmHttp,
+                                &[("status", &status.to_string()), ("detail", &text)],
+                            )
+                        );
                     }
                     return Ok(resp);
                 }
@@ -78,7 +98,8 @@ impl CompatClient {
                 }
             }
         }
-        Err(last_err.unwrap_or_else(|| anyhow!("llm недоступна")))
+        Err(last_err
+            .unwrap_or_else(|| anyhow::Error::new(AppError::LlmUnavailable)))
     }
 }
 
@@ -161,7 +182,7 @@ fn parse_non_stream(resp: reqwest::blocking::Response) -> Result<ChatResult> {
         .choices
         .into_iter()
         .next()
-        .ok_or_else(|| anyhow!("пустой ответ llm"))?;
+        .ok_or_else(|| anyhow!(i18n::t(Msg::ErrLlmEmptyResponse)))?;
     let usage = parsed.usage.map(|u| Usage {
         prompt_tokens: u.prompt_tokens.unwrap_or(0),
         completion_tokens: u.completion_tokens.unwrap_or(0),
@@ -277,7 +298,8 @@ impl Llm for CompatClient {
     fn complete(&self, system: &str, user: &str) -> Result<String> {
         let messages = vec![ChatMessage::system(system), ChatMessage::user(user)];
         let result = self.chat(&messages, &[], None)?;
-        result.content.ok_or_else(|| anyhow!("пустой ответ llm"))
+        result.content
+            .ok_or_else(|| anyhow!(i18n::t(Msg::ErrLlmEmptyResponse)))
     }
 
     fn chat(

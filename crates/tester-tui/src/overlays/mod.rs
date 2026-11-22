@@ -3,6 +3,7 @@ mod chat_sessions;
 mod diff;
 mod manual;
 mod plan;
+mod security;
 mod session_list;
 
 pub use branch::BranchOverlay;
@@ -10,6 +11,7 @@ pub use chat_sessions::ChatSessionsOverlay;
 pub use diff::DiffOverlay;
 pub use manual::ManualOverlay;
 pub use plan::{PlanDecision, PlanOverlay};
+pub use security::SecurityOverlay;
 pub use session_list::SessionListOverlay;
 
 use crossterm::event::KeyEvent;
@@ -26,6 +28,7 @@ pub enum Overlay {
     Diff(DiffOverlay),
     Branch(BranchOverlay),
     Plan(PlanOverlay),
+    Security(SecurityOverlay),
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +51,7 @@ impl Overlay {
             Overlay::Diff(o) => o.draw(frame, area, theme),
             Overlay::Branch(o) => o.draw(frame, area, theme),
             Overlay::Plan(o) => o.draw(frame, area, theme),
+            Overlay::Security(o) => o.draw(frame, area, theme),
         }
     }
 
@@ -59,6 +63,7 @@ impl Overlay {
             Overlay::Diff(o) => o.handle_key(key),
             Overlay::Branch(o) => o.handle_key(key),
             Overlay::Plan(o) => o.handle_key(key),
+            Overlay::Security(o) => o.handle_key(key),
         }
     }
 }

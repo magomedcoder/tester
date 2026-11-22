@@ -63,7 +63,7 @@ pub(crate) fn load_config(profile: &ProjectProfile) -> Result<Config> {
 }
 
 pub(crate) fn need_llm(config: &Config) -> Result<Arc<dyn Llm>> {
-    create_client(&config.llm).context("создание клиента llm")
+    create_client(&config.llm).with_context(|| i18n::t(Msg::LlmClientCreate))
 }
 
 pub(crate) fn apply_config_flags(profile: &mut ProjectProfile, config: &Config) {
@@ -71,10 +71,7 @@ pub(crate) fn apply_config_flags(profile: &mut ProjectProfile, config: &Config) 
         profile.android_opt_in = true;
     }
     if config.run.allow_docker {
-        profile.notes.push(
-            "allow_docker=true: tool docker_info доступен агенту; внешние сервисы по-прежнему не поднимаются автоматически"
-                .into(),
-        );
+        profile.notes.push(i18n::t(Msg::NoteDockerAllowed).into());
     }
 }
 
@@ -156,8 +153,7 @@ pub(crate) fn tui_log_path() -> Option<PathBuf> {
         }
         return Some(path);
     }
-    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
-    let dir = PathBuf::from(home).join(".tester").join("logs");
+    let dir = tester_core::config::tester_home().join("logs");
     let _ = std::fs::create_dir_all(&dir);
     Some(dir.join("tui.log"))
 }

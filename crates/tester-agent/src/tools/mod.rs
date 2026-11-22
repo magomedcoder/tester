@@ -2,10 +2,12 @@ mod analysis;
 mod domain;
 mod fs;
 mod git;
+mod security;
 mod shell;
 
 use crate::AgentContext;
-use anyhow::Result;
+use anyhow::{Result, anyhow};
+use tester_core::i18n::{self, Msg};
 use serde_json::Value;
 use std::sync::Arc;
 use tester_llm::ToolSpec;
@@ -83,6 +85,9 @@ pub fn default_registry(ctx: &AgentContext) -> ToolRegistry {
         Arc::new(analysis::ExpandContext),
         Arc::new(analysis::IndexStatusTool),
         Arc::new(analysis::ChangedSymbols),
+        Arc::new(security::SecurityScan),
+        Arc::new(security::SecurityExplain),
+        Arc::new(security::SecurityPatch),
     ];
     if ctx.config.run.allow_docker {
         tools.push(Arc::new(shell::DockerInfo));
@@ -94,7 +99,7 @@ pub(crate) fn arg_str(args: &Value, key: &str) -> Result<String> {
     args.get(key)
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or_else(|| anyhow::anyhow!("нужен аргумент '{key}' (string)"))
+        .ok_or_else(|| anyhow!(i18n::tr(Msg::ErrToolArgRequired, &[("key", key)])))
 }
 
 pub(crate) fn arg_str_opt(args: &Value, key: &str) -> Option<String> {

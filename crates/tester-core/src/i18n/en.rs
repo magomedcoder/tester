@@ -55,6 +55,8 @@ pub(crate) fn t(msg: Msg) -> &'static str {
         Msg::SlashDiff => "git diff viewer",
         Msg::SlashBranch => "git branch checkout",
         Msg::SlashProposePlan => "preview plan before run",
+        Msg::SlashSecurity => "security scan overlay",
+        Msg::SecurityOverlayTitle => "security",
         Msg::PickerStatusProject => "project root detected - Ctrl+Enter / Ctrl+S to open",
         Msg::PickerStatusNav => {
             "↑↓ navigate  Enter open folder  -> worktrees  Ctrl+Enter select  Esc cancel"
@@ -264,5 +266,129 @@ Commands:
         }
         Msg::AuditEmpty => "audit: empty",
         Msg::AuditHeader => "audit: {n} actions",
+
+        Msg::PlanProgress => "| plan -> generate -> validate -> repair ({n})",
+        Msg::PlanItemNotFound => "plan item '{symbol}' not found for repair",
+        Msg::PlainNeedsPath => "`--plain` requires PATH",
+        Msg::PruneNeedsArg => "specify id | --all | --workspace | --older-than",
+        Msg::PruneCli => "pruned {n}",
+        Msg::SecurityPatchNote => "note: {note}",
+        Msg::SecurityApplied => "applied: {path}",
+        Msg::SecurityDryRunHint => "dry-run (pass --apply to write)",
+        Msg::FindingNotFound => "finding not found: {id}",
+        Msg::UsageLine => "usage: prompt={prompt} completion={completion} total={total}",
+        Msg::ReplTurnsLine => "- turns={turns} tools={tools} tokens≈{tokens} {status}",
+        Msg::ItemWritten => "written",
+        Msg::ItemPassed => "passed",
+        Msg::PlanShowEmpty => "no goals in .tester/plan.json",
+        Msg::LlmClientCreate => "creating llm client",
+        Msg::ErrPathEscapes => "path escapes project root: {path}",
+        Msg::ErrPathForbidden => "path forbidden: {detail}",
+        Msg::ErrPathNeedsUpdate => "refusing to overwrite an existing file without --update",
+        Msg::ErrManifestWrite => "refusing to write manifest {name}",
+        Msg::ErrGateNoAssertion => "gate: no assertion (assert/expect/REQUIRE)",
+        Msg::ErrGateWeakTest => "gate: weak test (only snapshot/sleep without behavior checks)",
+        Msg::ErrGateForbiddenNetwork => "gate: forbidden network/Docker for an external service",
+        Msg::ErrGateUnitNetwork => "gate: unit test pulls in network/DB - use integration",
+        Msg::DoctorNoAdapter => "no adapter",
+        Msg::DoctorNotRequired => "not required",
+        Msg::DoctorGradlewFound => {
+            "gradlew found; connectedAndroidTest will need a device/emulator"
+        }
+        Msg::DoctorGradlewMissing => "gradlew not found",
+        Msg::DoctorHttp => "HTTP {status} @ {url}",
+        Msg::DoctorUiState => "framework={framework} ready={ready}",
+        Msg::DoctorSecurityRules => "{n} rules, enabled={enabled}, deep={deep}",
+        Msg::SecReportTitle => "# Security report",
+        Msg::SecCounts => "## Counts",
+        Msg::SecNotes => "## Notes",
+        Msg::SecFindings => "## Findings",
+        Msg::SecNoFindings => "_No findings above configured severities._",
+        Msg::SecScanSummary => "security scan: {n} findings ({pack} {version})",
+        Msg::SecScanFailed => "security scan failed: {err}",
+        Msg::SecFixLine => "Fix ({strategy}) : {summary}",
+        Msg::SecNoteLine => "note: {note}",
+        Msg::PermPromptCli => "Allow {tool}? {preview} [y/N] ",
+        Msg::IoRead => "reading {path}",
+        Msg::IoWrite => "writing {path}",
+        Msg::IoCreate => "creating {path}",
+        Msg::IoParse => "parsing {path}",
+        Msg::AgentDeadline => "agent exceeded deadline {secs}s",
+        Msg::MaxToolCalls => "max_tool_calls exceeded ({n})",
+        Msg::UnknownTool => "unknown tool: {name}",
+        Msg::AgentTurnLimit => "(turn limit reached)",
+        Msg::AgentStepModel => "turn {turn}: calling model",
+        Msg::AgentStepDone => "done",
+        Msg::AgentStepTool => "tool {name}",
+        Msg::SecMetaLine => {
+            "- root: `{root}`\n- rule_pack: {pack}\n- deep: {deep}\n- findings: {n}\n"
+        }
+        Msg::SecFindingMeta => {
+            "- file: `{path}`:{line}\n- category: {category}\n- confidence: {confidence}\n- evidence: {evidence}\n"
+        }
+        Msg::WarnFlutterIntegration => {
+            "integration_test package is missing; Flutter integration goals are skipped"
+        }
+        Msg::WarnUiSkipped => "skipping UI goal '{symbol}': UI runner is not ready",
+        Msg::WarnPlaywrightMissing => {
+            "Playwright is not installed; run `tester ui init` before UI tests"
+        }
+        Msg::NoteDockerAllowed => {
+            "allow_docker=true: the docker_info tool is available to the agent; external services are still not started automatically"
+        }
+        Msg::NoteApiSurface => {
+            "API surface detected (OpenAPI/proto/router) - contract kind is available"
+        }
+        Msg::NoteCppKinds => "C++: contract/UI kinds unsupported; unit+integration via gtest",
+        Msg::NoteAndroidOptIn => {
+            "Android project: instrumented tests require run.android_opt_in = true in tester.toml"
+        }
+        Msg::NoteVenv => ".venv found",
+        Msg::NoteLaravel => "Laravel detected",
+
+        Msg::ErrContextTooLarge => {
+            "context for '{symbol}' exceeds max_context_chars ({max})"
+        }
+        Msg::ErrParseDraftFromLlm => "could not parse test file from model response",
+        Msg::ErrEmptyValidateCommand => "empty validation command",
+        Msg::ErrUiBaseUnavailable => "UI base_url {base} unavailable and tests.ui.start is not set",
+        Msg::ErrUiStartEarly => "UI start command exited early with {status}: {start}",
+        Msg::ErrWaitUrlTimeout => "timeout waiting for {url}",
+        Msg::ErrValidateTimeout => "validation exceeded timeout {secs}s",
+        Msg::ErrBugInputRequired => "need --bug, --bug-file, or a traceback on stdin",
+        Msg::ErrNoRepairState => "no saved repair state in {path}",
+        Msg::ErrNoMutationTarget => "no covered pure symbol for mutation testing",
+        Msg::ErrNoMutationApplied => "could not apply any mutation",
+        Msg::ErrNoFixturesDir => "no fixtures directory: {path}",
+        Msg::ErrNoAdapterForLang => "no adapter for {lang}",
+        Msg::ErrLangUndetected => "could not detect project language in {root}",
+        Msg::ErrProjectManifestNotFound => "project manifest not found",
+        Msg::ErrPatchFragmentNotFound => "old fragment not found in {path}",
+        Msg::ErrToolArgRequired => "argument '{key}' required (string)",
+        Msg::ErrPlanSymbolNotFound => "symbol '{symbol}' not found in plan",
+        Msg::ErrNoPlanItemForSymbol => "no plan item for {symbol}",
+        Msg::ErrNoLastRepairJson => {
+            "no .tester/last_repair.json - run run_tests with a failure first"
+        }
+        Msg::ErrEmptyAdapterArgv => "empty adapter argv",
+        Msg::ErrDockerDisabled => "docker disabled: run.allow_docker=false",
+        Msg::ErrDockerUnavailable => "docker unavailable: {detail}",
+        Msg::ErrLlmAccessDenied => "llm HTTP {status}: access denied: {detail}",
+        Msg::ErrLlmHttp => "llm HTTP {status}: {detail}",
+        Msg::ErrLlmHttpStatus => "llm HTTP {status}",
+        Msg::ErrLlmEmptyResponse => "empty llm response",
+        Msg::ErrEmbeddingsHttp => "embeddings HTTP {status}: {detail}",
+        Msg::ErrEmbeddingsNoData => "embeddings: no data",
+        Msg::ErrEmbeddingsNoEmbedding => "embeddings: no embedding",
+        Msg::ErrEmbeddingsDisabled => "embeddings disabled (set [analysis] embeddings = true)",
+        Msg::ErrEmbeddingsModelRequired => "need embeddings_model or llm.model",
+        Msg::ErrSemanticSearchNeedsEmbeddings => {
+            "semantic_search: enable [analysis] embeddings = true and build the index"
+        }
+        Msg::ErrFileNotFound => "file not found: {path}",
+        Msg::OutlineNoSymbols => "(no symbols)",
+        Msg::SessionIdEmpty => "empty session id",
+        Msg::SessionIdNoMatch => "no session matching '{prefix}'",
+        Msg::SessionIdAmbiguous => "ambiguous session id '{prefix}' ({n} matches)",
     }
 }

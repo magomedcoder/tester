@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tester_core::config::Config;
+use tester_core::i18n::{self, Msg};
 use tester_core::model::{
     Gap, Language, PlanItem, PlannedCase, ProjectProfile, Symbol, TestKind, TestPlan,
 };
@@ -177,9 +178,7 @@ pub fn build_plan_with(
         && kinds.contains(&TestKind::Integration)
         && profile.notes.iter().any(|n| n.contains("integration_test"))
     {
-        warnings.push(
-            "пакет integration_test отсутствует; цели Flutter integration пропускаются".into(),
-        );
+        warnings.push(i18n::t(Msg::WarnFlutterIntegration).into());
     }
 
     gaps.sort_by(|a, b| {
@@ -211,9 +210,9 @@ pub fn build_plan_with(
             continue;
         }
         if gap.kind == TestKind::Ui && !profile.ui_ready && profile.language != Language::Flutter {
-            warnings.push(format!(
-                "пропуск UI-цели '{}': UI-раннер не готов",
-                gap.symbol.name
+            warnings.push(i18n::tr(
+                Msg::WarnUiSkipped,
+                &[("symbol", &gap.symbol.name)],
             ));
             continue;
         }
@@ -271,9 +270,7 @@ fn push_ui_gaps(profile: &ProjectProfile, gaps: &mut Vec<Gap>, warnings: &mut Ve
     }
     if profile.root.join("index.html").exists() {
         if !profile.ui_ready {
-            warnings.push(
-                "Playwright не установлен; перед UI-тестами выполните `tester ui init`".into(),
-            );
+            warnings.push(i18n::t(Msg::WarnPlaywrightMissing).into());
         } else {
             gaps.push(ui_gap(profile));
         }

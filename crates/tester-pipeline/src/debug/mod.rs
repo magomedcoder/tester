@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::io::{self, Read};
 use std::path::Path;
 use tester_core::config::Config;
+use tester_core::i18n::{self, Msg};
 use tester_core::model::{ItemStatus, ProjectProfile, ReportItem, RunReport, TestKind};
 use tester_core::stacktrace::parse_stacktrace;
 use tester_llm::Llm;
@@ -45,7 +46,7 @@ pub fn read_bug_input(bug: Option<String>, bug_file: Option<&Path>, stdin: bool)
             return Ok(buf);
         }
     }
-    bail!("нужен --bug, --bug-file или traceback на stdin");
+    bail!("{}", i18n::t(Msg::ErrBugInputRequired));
 }
 
 fn atty_stdin_is_pipe() -> bool {

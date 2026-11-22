@@ -6,8 +6,13 @@ model = ""
 api_key = ""
 
 [run]
-agent_auto_approve = false
+agent_auto_approve = true
 allow_docker = false
 
 [analysis]
 embeddings = false
+
+[security]
+enabled = true
+deep = false
+fetch_advisories = false

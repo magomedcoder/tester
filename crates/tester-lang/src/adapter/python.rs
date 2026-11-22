@@ -3,6 +3,7 @@ use crate::index::iter_source_files;
 use anyhow::Result;
 use regex::Regex;
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::*;
 
 pub struct PythonAdapter;
@@ -48,7 +49,7 @@ impl LanguageAdapter for PythonAdapter {
             n.starts_with("test_") || n.ends_with("_test.py")
         });
         if root.join(".venv").exists() {
-            p.notes.push("найден .venv".into());
+            p.notes.push(i18n::t(Msg::NoteVenv).into());
         }
         p.capabilities = self.capabilities(&p);
         Ok(p)

@@ -1,4 +1,7 @@
-# Commands
+# CLI commands
+
+External terminal commands (`tester test ...`, `agent`, `security`, ...).  
+In-UI slash commands and keybinds: [ui.md](ui.md).
 
 Most commands take `<PATH>` - path to the project or any file inside it (root is detected via the manifest).
 
@@ -12,7 +15,7 @@ Most commands take `<PATH>` - path to the project or any file inside it (root is
 | `-h`, `--help`        | Help                                                                    |
 | `-V`, `--version`     | Version                                                                 |
 
-Model, `base_url`, `api_key`, and `agent_auto_approve` are set only in `tester.toml` (`[llm]` / `[run]`). Locale: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` in `tester.toml` -> `en`.
+Model, `base_url`, `api_key`, and `agent_auto_approve` come from `~/.tester/tester.toml` and/or `<project>/tester.toml` (`[llm]` / `[run]`; project wins). Locale: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` in toml -> `en`.
 
 ## Test pipeline (`tester test ...`)
 
@@ -136,7 +139,7 @@ tester chat /path/to/project
 
 In `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/clear`, `/audit`, `/grep`, `/symbol`, `/refs`, `/search`, `/index`, `/map`, `/list_files`, `/show_file`, `/exit`.
 
-For the full-screen UI, see [tui.md](tui.md).
+In-UI slash commands and keybinds: [ui.md](ui.md).
 
 ## `sessions`
 
@@ -151,7 +154,53 @@ tester sessions prune --older-than 30
 tester sessions prune --all
 ```
 
-In TUI: `/session` picker`/session new``/session <id>``/prune ...`. `/recent` is **projects**, not chat sessions.
+In TUI: `/session` picker, `/session new`, `/session <id>`, `/prune ...`. `/recent` is **projects**, not chat sessions.
+
+## `security`
+
+Defensive only: detect -> explain -> harden. No exploit generation.
+
+```bash
+tester security scan /path/to/project
+tester security scan /path/to/project --deep --format json
+tester security scan /path/to/project --md --fail-on high
+tester security explain /path/to/project F-0001
+tester security patch /path/to/project --finding F-0001          # dry-run
+tester security patch /path/to/project --finding F-0001 --apply
+tester security patch /path/to/project --finding F-0001 --llm --apply
+```
+
+Exit code `2` if findings meet `--fail-on` (default `high`).
+
+### Config (`[security]` in `tester.toml`)
+
+```toml
+[security]
+enabled = true
+deep = false
+fetch_advisories = false
+severities = ["critical", "high", "medium", "low", "info"]
+auto_patch = false
+disabled_rules = []
+max_files = 4000
+```
+
+All keys: [config.md](config.md).
+
+### Agent / TUI
+
+| Channel     | How                                                                       |
+| ----------- | ------------------------------------------------------------------------- |
+| Agent tools | `security_scan` (read-only), `security_explain`, `security_patch` (write) |
+| TUI         | `/security` - report overlay; `/security deep` - taint                    |
+
+### What is scanned
+
+- Secrets / high-entropy / `.env`
+- Dangerous sinks (exec, eval, pickle, yaml.load, SQL concat, ...)
+- CI/Docker (`curl|sh`, privileged, docker.sock)
+- Optional OSV (`--fetch-advisories`)
+- Deep: intra-file source->sink
 
 ## `ui init`
 

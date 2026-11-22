@@ -5,6 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tester_core::i18n::{self, Msg};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionMeta {
@@ -47,18 +48,8 @@ fn new_id() -> String {
     format!("{nanos:016x}{:016x}", h.finish())
 }
 
-fn tester_home() -> PathBuf {
-    if let Ok(p) = std::env::var("TESTER_HOME") {
-        return PathBuf::from(p);
-    }
-    std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(".tester")
-}
-
 fn sessions_root() -> PathBuf {
-    tester_home().join("sessions")
+    tester_core::config::tester_home().join("sessions")
 }
 
 fn session_dir(id: &str) -> PathBuf {
@@ -107,7 +98,7 @@ fn canonicalize_workspace(workspace: &Path) -> PathBuf {
 
 pub fn read_meta(id: &str) -> Result<SessionMeta> {
     let p = meta_path(id);
-    let text = fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
+    let text = fs::read_to_string(&p).with_context(|| i18n::io_ctx(Msg::IoRead, &p))?;
     Ok(serde_json::from_str(&text)?)
 }
 
@@ -116,13 +107,13 @@ fn write_meta(meta: &SessionMeta) -> Result<()> {
     fs::create_dir_all(&dir)?;
     let p = meta_path(&meta.id);
     fs::write(&p, serde_json::to_string_pretty(meta)?)
-        .with_context(|| format!("write {}", p.display()))?;
+        .with_context(|| i18n::io_ctx(Msg::IoWrite, &p))?;
     Ok(())
 }
 
 fn load_body(id: &str) -> Result<AgentSession> {
     let p = body_path(id);
-    let text = fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))?;
+    let text = fs::read_to_string(&p).with_context(|| i18n::io_ctx(Msg::IoRead, &p))?;
     Ok(serde_json::from_str(&text)?)
 }
 
@@ -131,7 +122,7 @@ fn save_body(id: &str, session: &AgentSession) -> Result<()> {
     fs::create_dir_all(&dir)?;
     let p = body_path(id);
     fs::write(&p, serde_json::to_string_pretty(session)?)
-        .with_context(|| format!("write {}", p.display()))?;
+        .with_context(|| i18n::io_ctx(Msg::IoWrite, &p))?;
     Ok(())
 }
 
@@ -140,7 +131,7 @@ pub fn set_active(workspace: &Path, id: &str) -> Result<()> {
     if let Some(parent) = p.parent() {
         fs::create_dir_all(parent)?;
     }
-    fs::write(&p, id).with_context(|| format!("write {}", p.display()))?;
+    fs::write(&p, id).with_context(|| i18n::io_ctx(Msg::IoWrite, &p))?;
     Ok(())
 }
 
@@ -218,8 +209,9 @@ pub fn delete(id: &str) -> Result<()> {
 
 pub fn resolve_id(prefix: &str) -> Result<String> {
     let prefix = prefix.trim();
+    use tester_core::i18n::{self, Msg};
     if prefix.is_empty() {
-        bail!("empty session id");
+        bail!("{}", i18n::t(Msg::SessionIdEmpty));
     }
     if meta_path(prefix).is_file() {
         return Ok(prefix.to_string());
@@ -229,9 +221,18 @@ pub fn resolve_id(prefix: &str) -> Result<String> {
         .filter(|m| m.id.starts_with(prefix))
         .collect::<Vec<_>>();
     match hits.len() {
-        0 => bail!("no session matching '{prefix}'"),
+        0 => bail!(
+            "{}",
+            i18n::tr(Msg::SessionIdNoMatch, &[("prefix", prefix)])
+        ),
         1 => Ok(hits.remove(0).id),
-        _ => bail!("ambiguous session id '{prefix}' ({} matches)", hits.len()),
+        _ => bail!(
+            "{}",
+            i18n::tr(
+                Msg::SessionIdAmbiguous,
+                &[("prefix", prefix), ("n", &hits.len().to_string())]
+            )
+        ),
     }
 }
 

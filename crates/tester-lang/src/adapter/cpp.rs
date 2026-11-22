@@ -3,6 +3,7 @@ use crate::index::iter_source_files;
 use anyhow::{Context, Result};
 use regex::Regex;
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::*;
 
 pub struct CppAdapter;
@@ -17,12 +18,12 @@ project(app CXX)
 set(CMAKE_CXX_STANDARD 17)
 enable_testing()
 include(FetchContent)
-FetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip)
+FetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.18.0.zip)
 FetchContent_MakeAvailable(googletest)
 add_subdirectory(tests)
 "#,
         )
-        .with_context(|| format!("запись {}", cmake_path.display()))?;
+        .with_context(|| i18n::io_ctx(Msg::IoWrite, &cmake_path))?;
     } else {
         let mut cmake = std::fs::read_to_string(&cmake_path)?;
         let has_runner = cmake.contains("GTest")
@@ -36,14 +37,14 @@ add_subdirectory(tests)
             }
             if !cmake.contains("FetchContent") {
                 cmake.push_str(
-                    "\ninclude(FetchContent)\nFetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip)\nFetchContent_MakeAvailable(googletest)\n",
+                    "\ninclude(FetchContent)\nFetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.18.0.zip)\nFetchContent_MakeAvailable(googletest)\n",
                 );
             }
             if !cmake.contains("add_subdirectory(tests)") {
                 cmake.push_str("\nadd_subdirectory(tests)\n");
             }
             std::fs::write(&cmake_path, cmake)
-                .with_context(|| format!("запись {}", cmake_path.display()))?;
+                .with_context(|| i18n::io_ctx(Msg::IoWrite, &cmake_path))?;
         }
     }
 

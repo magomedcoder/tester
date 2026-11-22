@@ -6,8 +6,6 @@ Supported languages: Go, C++, Rust, JS/TS, Dart/Flutter, Kotlin, Python, PHP.
 
 ### Build from source
 
-Cargo workspace (`crates/*`). From the repo root:
-
 ```bash
 cargo build --release -p tester
 # binary: target/release/tester
@@ -44,21 +42,24 @@ tester test run /web-app --kind ui
 # Environment health
 tester doctor /project
 
+# Defensive security scan + harden patch
+tester security scan /project
+tester security patch /project --finding F-0001
+
 # Multi-chat sessions
 tester sessions list
 tester /project --session <id>
 ```
 
-Config: `<root>/tester.toml`. Default `--kind all`; `test run` writes files immediately (disable with `--dry-run`).
+Config: `~/.tester/tester.toml`.
+Default `--kind all`; `test run` writes files immediately (disable with `--dry-run`).
 
 ## Docs
 
-| Topic                          | Link                                  |
-| ------------------------------ | ------------------------------------- |
-| CLI commands & global options  | [docs/en/commands.md](docs/en/commands.md) |
-| Interactive TUI                | [docs/en/tui.md](docs/en/tui.md)           |
-| Config `tester.toml`           | [docs/en/config.md](docs/en/config.md)     |
-| Exit codes & threats           | [docs/en/reference.md](docs/en/reference.md) |
-
+- [CLI commands & global options](docs/cli.md)
+- [TUI (slash / keybinds)](docs/ui.md)
+- [Config `tester.toml`](docs/config.md)
+- [Exit codes & threats](docs/reference.md)
+- [Security (`tester security`)](docs/cli.md#security)
 
 [Русский](README-ru.md)

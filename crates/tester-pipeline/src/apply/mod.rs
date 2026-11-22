@@ -1,6 +1,8 @@
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use similar::{ChangeTag, TextDiff};
 use std::path::PathBuf;
+use tester_core::error::AppError;
+use tester_core::i18n::{self, Msg};
 use tester_core::model::{Draft, ProjectProfile};
 use tester_core::security::path_escapes_root;
 use tester_lang::adapter;
@@ -21,7 +23,10 @@ pub fn apply_draft(
     ensure_allowed(profile, draft)?;
     let abs = profile.root.join(&draft.path);
     if path_escapes_root(&profile.root, &draft.path) {
-        bail!("путь выходит за корень проекта: {}", draft.path.display());
+        return Err(AppError::PathEscapesRoot {
+            path: draft.path.display().to_string(),
+        }
+        .into());
     }
 
     let old = if abs.exists() {
@@ -37,9 +42,8 @@ pub fn apply_draft(
     };
 
     if abs.exists() && !update && !draft.append && write {
-        bail!(
-            "отказ перезаписать существующий файл без --update: {}",
-            draft.path.display()
+        return Err(
+            anyhow::Error::new(AppError::PathNeedsUpdate).context(draft.path.display().to_string())
         );
     }
 
@@ -49,10 +53,9 @@ pub fn apply_draft(
     }
 
     if let Some(parent) = abs.parent() {
-        std::fs::create_dir_all(parent)
-            .with_context(|| format!("создание {}", parent.display()))?;
+        std::fs::create_dir_all(parent).with_context(|| i18n::io_ctx(Msg::IoCreate, &parent))?;
     }
-    std::fs::write(&abs, &final_content).with_context(|| format!("запись {}", abs.display()))?;
+    std::fs::write(&abs, &final_content).with_context(|| i18n::io_ctx(Msg::IoWrite, &abs))?;
     let _ = cache::invalidate(&profile.root);
     Ok(ApplyOutcome::Written(draft.path.clone()))
 }
@@ -76,7 +79,10 @@ pub fn ensure_allowed(profile: &ProjectProfile, draft: &Draft) -> Result<()> {
     let s = path.to_string_lossy();
 
     if s.contains("..") {
-        bail!("путь запрещён: {}", s);
+        return Err(AppError::PathForbidden {
+            detail: s.to_string(),
+        }
+        .into());
     }
 
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
@@ -93,16 +99,18 @@ pub fn ensure_allowed(profile: &ProjectProfile, draft: &Draft) -> Result<()> {
             | "build.gradle.kts"
             | "pom.xml"
     ) {
-        bail!("отказ писать манифест {}", name);
+        return Err(AppError::ManifestWriteRefused {
+            name: name.to_string(),
+        }
+        .into());
     }
 
     let adapter = adapter::adapter_for(profile.language)?;
     if !adapter.path_allowed(profile, draft.kind, path) {
-        bail!(
-            "путь запрещён политикой записи {}: {}",
-            profile.language.as_str(),
-            s
-        );
+        return Err(AppError::PathForbidden {
+            detail: format!("{}: {}", profile.language.as_str(), s),
+        }
+        .into());
     }
     Ok(())
 }

@@ -13,6 +13,7 @@ tester-core = { path = "crates/tester-core" }
 tester-lang = { path = "crates/tester-lang" }
 tester-llm = { path = "crates/tester-llm" }
 tester-analysis = { path = "crates/tester-analysis" }
+tester-security = { path = "crates/tester-security" }
 tester-pipeline = { path = "crates/tester-pipeline" }
 tester-agent = { path = "crates/tester-agent" }
 tester-tui = { path = "crates/tester-tui" }

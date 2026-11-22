@@ -3,8 +3,10 @@ use anyhow::{Context, Result, bail};
 use regex::Regex;
 use std::path::{Path, PathBuf};
 use tester_core::config::Config;
+use tester_core::error::AppError;
 use tester_core::failure::ErrorClass;
 use tester_core::gate;
+use tester_core::i18n::{self, Msg};
 use tester_core::model::{Draft, Language, PlanItem, ProjectProfile, TestKind};
 use tester_lang::index::iter_source_files;
 use tester_llm::Llm;
@@ -27,9 +29,14 @@ pub fn generate_draft(
     let user = user_prompt(profile, item, style.as_deref(), page.as_deref());
     if user.len() > config.run.max_context_chars {
         bail!(
-            "контекст для '{}' превышает max_context_chars ({})",
-            item.gap.symbol.name,
-            config.run.max_context_chars
+            "{}",
+            i18n::tr(
+                Msg::ErrContextTooLarge,
+                &[
+                    ("symbol", &item.gap.symbol.name),
+                    ("max", &config.run.max_context_chars.to_string()),
+                ],
+            )
         );
     }
 
@@ -99,7 +106,7 @@ pub(crate) fn parse_draft(profile: &ProjectProfile, item: &PlanItem, raw: &str) 
                 None
             }
         })
-        .ok_or_else(|| anyhow::anyhow!("не удалось разобрать тестовый файл из ответа модели"))?;
+        .ok_or_else(|| anyhow::anyhow!(i18n::t(Msg::ErrParseDraftFromLlm)))?;
 
     let path = PathBuf::from(path.trim_start_matches("/"));
     validate_draft_path(profile, item.kind, &path)?;
@@ -116,7 +123,7 @@ pub(crate) fn parse_draft(profile: &ProjectProfile, item: &PlanItem, raw: &str) 
     };
 
     if !gate::has_assertion(&draft.content) {
-        bail!("черновик отклонён: нет утверждения (assert)");
+        return Err(AppError::GateNoAssertion.into());
     }
     Ok(draft)
 }
@@ -126,15 +133,17 @@ fn validate_draft_path(profile: &ProjectProfile, kind: TestKind, path: &Path) ->
         .components()
         .any(|c| matches!(c, std::path::Component::ParentDir))
     {
-        bail!("путь черновика выходит за пределы через ..");
+        return Err(AppError::PathEscapesRoot {
+            path: path.display().to_string(),
+        }
+        .into());
     }
     let adapter = tester_lang::adapter::adapter_for(profile.language)?;
     if !adapter.path_allowed(profile, kind, path) {
-        bail!(
-            "путь запрещён политикой записи {}: {}",
-            profile.language.as_str(),
-            path.display()
-        );
+        return Err(AppError::PathForbidden {
+            detail: format!("{}: {}", profile.language.as_str(), path.display()),
+        }
+        .into());
     }
     Ok(())
 }
@@ -200,7 +209,7 @@ fn read_page_context(profile: &ProjectProfile) -> Result<Option<String>> {
         let p = profile.root.join(c);
         if p.exists() {
             let text =
-                std::fs::read_to_string(&p).with_context(|| format!("чтение {}", p.display()))?;
+                std::fs::read_to_string(&p).with_context(|| i18n::io_ctx(Msg::IoRead, &p))?;
             let summary = summarize_dom(&text);
             let body: String = text.chars().take(3500).collect();
             return Ok(Some(format!("{summary}\n\nhtml:\n{body}")));
@@ -334,11 +343,12 @@ mod tests {
         let profile = rust_profile();
         let raw = "```path\nsrc/lib.rs\n```\n```rust\n#[test] fn t(){ assert_eq!(1,1); }\n```";
         let err = parse_draft(&profile, &item(TestKind::Unit, "tests/x.rs"), raw).unwrap_err();
+        let s = err.to_string().to_ascii_lowercase();
         assert!(
-            err.to_string().contains("отказ")
-                || err.to_string().contains("tests/")
-                || err.to_string().contains("политикой записи")
-                || err.to_string().contains("запрещён")
+            s.contains("forbidden")
+                || s.contains("запрещён")
+                || s.contains("policy")
+                || s.contains("tests/")
         );
     }
 

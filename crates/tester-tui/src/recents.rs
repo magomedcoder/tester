@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 
 const MAX_RECENTS: usize = 20;
 
@@ -14,7 +15,17 @@ pub struct Recents {
 
 impl Recents {
     pub fn load() -> Self {
-        Self::load_from(&store_path())
+        let path = store_path();
+        if path.is_file() {
+            return Self::load_from(&path);
+        }
+        let legacy = legacy_store_path();
+        if legacy.is_file() {
+            let recents = Self::load_from(&legacy);
+            let _ = recents.save();
+            return recents;
+        }
+        Self::default()
     }
 
     pub fn load_from(path: &Path) -> Self {
@@ -32,10 +43,10 @@ impl Recents {
 
     pub fn save_to(&self, path: &Path) -> Result<()> {
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
+            fs::create_dir_all(parent).with_context(|| i18n::io_ctx(Msg::IoCreate, &parent))?;
         }
         let text = serde_json::to_string_pretty(self)?;
-        fs::write(path, text).with_context(|| format!("write {}", path.display()))?;
+        fs::write(path, text).with_context(|| i18n::io_ctx(Msg::IoWrite, &path))?;
         Ok(())
     }
 
@@ -60,20 +71,20 @@ impl Recents {
 }
 
 pub fn store_path() -> PathBuf {
+    tester_core::config::tester_home().join("recents.json")
+}
+
+fn legacy_store_path() -> PathBuf {
     if let Ok(xdg) = std::env::var("XDG_DATA_HOME") {
         return PathBuf::from(xdg).join(".tester").join("recents.json");
     }
-    dirs_home()
-        .join(".local")
+    let home = std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("/"));
+    home.join(".local")
         .join("share")
         .join(".tester")
         .join("recents.json")
-}
-
-fn dirs_home() -> PathBuf {
-    std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/"))
 }
 
 #[cfg(test)]

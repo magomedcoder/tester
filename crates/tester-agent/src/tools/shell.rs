@@ -4,6 +4,7 @@ use anyhow::{Result, bail};
 use serde_json::{Value, json};
 use std::process::Command;
 use std::time::Duration;
+use tester_core::i18n::{self, Msg};
 use tester_core::model::Draft;
 use tester_lang::adapter;
 
@@ -48,7 +49,7 @@ impl Tool for RunArgv {
         let adapter = adapter::adapter_for(ctx.profile.language)?;
         let argv = adapter.validate_command(&ctx.profile, &draft);
         if argv.is_empty() {
-            bail!("пустой argv адаптера");
+            bail!("{}", i18n::t(Msg::ErrEmptyAdapterArgv));
         }
 
         if ctx.dry_run {
@@ -91,7 +92,7 @@ impl Tool for DockerInfo {
     }
     fn execute(&self, ctx: &AgentContext, _args: &Value) -> Result<String> {
         if !ctx.config.run.allow_docker {
-            bail!("docker отключён: run.allow_docker=false");
+            bail!("{}", i18n::t(Msg::ErrDockerDisabled));
         }
         let mut cmd = Command::new("docker");
         cmd.args(["info", "--format", "{{.ServerVersion}}"])
@@ -100,8 +101,14 @@ impl Tool for DockerInfo {
         let output = cmd.output()?;
         if !output.status.success() {
             bail!(
-                "docker недоступен: {}",
-                String::from_utf8_lossy(&output.stderr)
+                "{}",
+                i18n::tr(
+                    Msg::ErrDockerUnavailable,
+                    &[(
+                        "detail",
+                        &String::from_utf8_lossy(&output.stderr).into_owned(),
+                    )],
+                )
             );
         }
         let ver = String::from_utf8_lossy(&output.stdout).trim().to_string();

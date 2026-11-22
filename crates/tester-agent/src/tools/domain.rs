@@ -2,6 +2,7 @@ use super::{Tool, ToolKind, arg_bool, arg_str, arg_str_opt, truncate};
 use crate::AgentContext;
 use anyhow::{Result, anyhow, bail};
 use serde_json::{Value, json};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::{ItemStatus, TestKind};
 use tester_lang::discover::discover;
 use tester_pipeline::apply::apply_draft;
@@ -124,7 +125,7 @@ impl Tool for WriteTest {
             .iter()
             .find(|i| i.gap.symbol.name == symbol && (kind == TestKind::All || i.kind == kind))
             .cloned()
-            .ok_or_else(|| anyhow!("символ '{symbol}' не найден в плане"))?;
+            .ok_or_else(|| anyhow!("{}", i18n::tr(Msg::ErrPlanSymbolNotFound, &[("symbol", &symbol)])))?;
         let draft = generate_draft(ctx.llm.as_ref(), &ctx.profile, &ctx.config, &item)?;
         let write = !ctx.dry_run;
         let out = apply_draft(&ctx.profile, &draft, write, update)?;
@@ -240,12 +241,17 @@ impl Tool for RepairTest {
                         .cloned()
                 })
             })
-            .ok_or_else(|| anyhow!("нет plan item для {symbol}"))?;
+            .ok_or_else(|| {
+                anyhow!(
+                    "{}",
+                    i18n::tr(Msg::ErrNoPlanItemForSymbol, &[("symbol", &symbol)])
+                )
+            })?;
 
         let (mut draft, error) = if let Ok(st) = load_state(&ctx.profile.root) {
             (st.draft, arg_str_opt(args, "error").unwrap_or(st.error))
         } else {
-            bail!("нет .tester/last_repair.json - сначала run_tests с падением");
+            bail!("{}", i18n::t(Msg::ErrNoLastRepairJson));
         };
 
         if ctx.dry_run {

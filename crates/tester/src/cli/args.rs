@@ -99,6 +99,47 @@ pub enum Commands {
 
     #[command(subcommand)]
     Ui(UiCommands),
+
+    #[command(subcommand)]
+    Security(SecurityCommands),
+}
+
+#[derive(Debug, Subcommand)]
+pub enum SecurityCommands {
+    Scan {
+        path: PathBuf,
+        #[arg(long)]
+        deep: bool,
+        #[arg(long)]
+        fetch_advisories: bool,
+        #[arg(long, default_value = "high")]
+        fail_on: String,
+        #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+        format: OutputFormat,
+        #[arg(long)]
+        md: bool,
+    },
+    Explain {
+        path: PathBuf,
+        finding: String,
+        #[arg(long)]
+        deep: bool,
+    },
+    Patch {
+        path: PathBuf,
+        #[arg(long)]
+        finding: String,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long, default_value_t = true)]
+        dry_run: bool,
+        #[arg(long)]
+        no_dry_run: bool,
+        #[arg(long)]
+        deep: bool,
+        #[arg(long)]
+        llm: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]

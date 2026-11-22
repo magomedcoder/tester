@@ -55,6 +55,8 @@ pub(crate) fn t(msg: Msg) -> &'static str {
         Msg::SlashDiff => "просмотр git diff",
         Msg::SlashBranch => "переключение ветки",
         Msg::SlashProposePlan => "превью плана перед run",
+        Msg::SlashSecurity => "скан безопасности",
+        Msg::SecurityOverlayTitle => "security",
         Msg::PickerStatusProject => "корень проекта - Ctrl+Enter / Ctrl+S открыть",
         Msg::PickerStatusNav => {
             "↑↓ навигация  Enter папка  -> worktrees  Ctrl+Enter выбрать  Esc отмена"
@@ -264,5 +266,131 @@ y/N для write/shellapprove/reject плана через /propose_plan
         }
         Msg::AuditEmpty => "аудит: пусто",
         Msg::AuditHeader => "аудит: {n} действий",
+
+        Msg::PlanProgress => "| plan -> generate -> validate -> repair ({n})",
+        Msg::PlanItemNotFound => "элемент плана '{symbol}' не найден для repair",
+        Msg::PlainNeedsPath => "`--plain` требует PATH",
+        Msg::PruneNeedsArg => "укажите id | --all | --workspace | --older-than",
+        Msg::PruneCli => "удалено: {n}",
+        Msg::SecurityPatchNote => "заметка: {note}",
+        Msg::SecurityApplied => "применено: {path}",
+        Msg::SecurityDryRunHint => "dry-run (добавьте --apply для записи)",
+        Msg::FindingNotFound => "находка не найдена: {id}",
+        Msg::UsageLine => "расход: prompt={prompt} completion={completion} total={total}",
+        Msg::ReplTurnsLine => "- ходы={turns} tools={tools} tokens≈{tokens} {status}",
+        Msg::ItemWritten => "записан",
+        Msg::ItemPassed => "пройден",
+        Msg::PlanShowEmpty => "нет целей в .tester/plan.json",
+        Msg::LlmClientCreate => "создание клиента llm",
+        Msg::ErrPathEscapes => "путь выходит за корень проекта: {path}",
+        Msg::ErrPathForbidden => "путь запрещён: {detail}",
+        Msg::ErrPathNeedsUpdate => "отказ перезаписать существующий файл без --update",
+        Msg::ErrManifestWrite => "отказ писать манифест {name}",
+        Msg::ErrGateNoAssertion => "gate: нет утверждения (assert/expect/REQUIRE)",
+        Msg::ErrGateWeakTest => "gate: слабый тест (только snapshot/sleep без проверки поведения)",
+        Msg::ErrGateForbiddenNetwork => "gate: запрещённая сеть/Docker во внешнем сервисе",
+        Msg::ErrGateUnitNetwork => "gate: unit-тест тянет сеть/БД - используйте integration",
+        Msg::DoctorNoAdapter => "нет адаптера",
+        Msg::DoctorNotRequired => "не требуется",
+        Msg::DoctorGradlewFound => "gradlew найден; connectedAndroidTest потребует device/emulator",
+        Msg::DoctorGradlewMissing => "gradlew не найден",
+        Msg::DoctorHttp => "HTTP {status} @ {url}",
+        Msg::DoctorUiState => "framework={framework} ready={ready}",
+        Msg::DoctorSecurityRules => "правил: {n}, enabled={enabled}, deep={deep}",
+        Msg::SecReportTitle => "# Отчёт безопасности",
+        Msg::SecCounts => "## Количество",
+        Msg::SecNotes => "## Заметки",
+        Msg::SecFindings => "## Находки",
+        Msg::SecNoFindings => "_Нет находок выше заданных уровней серьёзности._",
+        Msg::SecScanSummary => "проверка безопасности: находок {n} ({pack} {version})",
+        Msg::SecScanFailed => "проверка безопасности не удалась: {err}",
+        Msg::SecFixLine => "Исправление ({strategy}) : {summary}",
+        Msg::SecNoteLine => "заметка: {note}",
+        Msg::PermPromptCli => "Разрешить {tool}? {preview} [y/N] ",
+        Msg::IoRead => "чтение {path}",
+        Msg::IoWrite => "запись {path}",
+        Msg::IoCreate => "создание {path}",
+        Msg::IoParse => "разбор {path}",
+        Msg::AgentDeadline => "агент превысил deadline {secs}s",
+        Msg::MaxToolCalls => "превышен max_tool_calls ({n})",
+        Msg::UnknownTool => "неизвестный tool: {name}",
+        Msg::AgentTurnLimit => "(лимит ходов)",
+        Msg::AgentStepModel => "ход {turn}: вызов модели",
+        Msg::AgentStepDone => "готово",
+        Msg::AgentStepTool => "tool {name}",
+        Msg::SecMetaLine => {
+            "- корень: `{root}`\n- rule_pack: {pack}\n- deep: {deep}\n- находок: {n}\n"
+        }
+        Msg::SecFindingMeta => {
+            "- файл: `{path}`:{line}\n- категория: {category}\n- уверенность: {confidence}\n- свидетельство: {evidence}\n"
+        }
+        Msg::WarnFlutterIntegration => {
+            "пакет integration_test отсутствует; цели Flutter integration пропускаются"
+        }
+        Msg::WarnUiSkipped => "пропуск UI-цели '{symbol}': UI-раннер не готов",
+        Msg::WarnPlaywrightMissing => {
+            "Playwright не установлен; перед UI-тестами выполните `tester ui init`"
+        }
+        Msg::NoteDockerAllowed => {
+            "allow_docker=true: tool docker_info доступен агенту; внешние сервисы по-прежнему не поднимаются автоматически"
+        }
+        Msg::NoteApiSurface => {
+            "обнаружена API-поверхность (OpenAPI/proto/router) - contract kind доступен"
+        }
+        Msg::NoteCppKinds => {
+            "C++: contract/UI kinds не поддерживаются; unit+integration через gtest"
+        }
+        Msg::NoteAndroidOptIn => {
+            "Android-проект: instrumented-тесты требуют run.android_opt_in = true в tester.toml"
+        }
+        Msg::NoteVenv => "найден .venv",
+        Msg::NoteLaravel => "обнаружен Laravel",
+
+        Msg::ErrContextTooLarge => {
+            "контекст для '{symbol}' превышает max_context_chars ({max})"
+        }
+        Msg::ErrParseDraftFromLlm => "не удалось разобрать тестовый файл из ответа модели",
+        Msg::ErrEmptyValidateCommand => "пустая команда проверки",
+        Msg::ErrUiBaseUnavailable => {
+            "UI base_url {base} недоступен, а tests.ui.start не задан"
+        }
+        Msg::ErrUiStartEarly => "команда старта UI завершилась рано с {status}: {start}",
+        Msg::ErrWaitUrlTimeout => "таймаут ожидания {url}",
+        Msg::ErrValidateTimeout => "проверка превысила таймаут {secs}с",
+        Msg::ErrBugInputRequired => "нужен --bug, --bug-file или traceback на stdin",
+        Msg::ErrNoRepairState => "нет сохранённого состояния repair в {path}",
+        Msg::ErrNoMutationTarget => "нет покрытого чистого символа для мутации",
+        Msg::ErrNoMutationApplied => "не удалось применить ни одну мутацию",
+        Msg::ErrNoFixturesDir => "нет каталога fixtures: {path}",
+        Msg::ErrNoAdapterForLang => "нет адаптера для {lang}",
+        Msg::ErrLangUndetected => "не удалось определить язык проекта в {root}",
+        Msg::ErrProjectManifestNotFound => "манифест проекта не найден",
+        Msg::ErrPatchFragmentNotFound => "фрагмент old не найден в {path}",
+        Msg::ErrToolArgRequired => "нужен аргумент '{key}' (string)",
+        Msg::ErrPlanSymbolNotFound => "символ '{symbol}' не найден в плане",
+        Msg::ErrNoPlanItemForSymbol => "нет plan item для {symbol}",
+        Msg::ErrNoLastRepairJson => {
+            "нет .tester/last_repair.json - сначала run_tests с падением"
+        }
+        Msg::ErrEmptyAdapterArgv => "пустой argv адаптера",
+        Msg::ErrDockerDisabled => "docker отключён: run.allow_docker=false",
+        Msg::ErrDockerUnavailable => "docker недоступен: {detail}",
+        Msg::ErrLlmAccessDenied => "llm HTTP {status}: доступ запрещён: {detail}",
+        Msg::ErrLlmHttp => "llm HTTP {status}: {detail}",
+        Msg::ErrLlmHttpStatus => "llm HTTP {status}",
+        Msg::ErrLlmEmptyResponse => "пустой ответ llm",
+        Msg::ErrEmbeddingsHttp => "embeddings HTTP {status}: {detail}",
+        Msg::ErrEmbeddingsNoData => "embeddings: нет data",
+        Msg::ErrEmbeddingsNoEmbedding => "embeddings: нет embedding",
+        Msg::ErrEmbeddingsDisabled => "embeddings выключены ([analysis] embeddings = true)",
+        Msg::ErrEmbeddingsModelRequired => "нужен embeddings_model или llm.model",
+        Msg::ErrSemanticSearchNeedsEmbeddings => {
+            "semantic_search: включите [analysis] embeddings = true и постройте индекс"
+        }
+        Msg::ErrFileNotFound => "файл не найден: {path}",
+        Msg::OutlineNoSymbols => "(нет символов)",
+        Msg::SessionIdEmpty => "пустой id сессии",
+        Msg::SessionIdNoMatch => "нет сессии по префиксу '{prefix}'",
+        Msg::SessionIdAmbiguous => "неоднозначный id сессии '{prefix}' ({n} совпадений)",
     }
 }

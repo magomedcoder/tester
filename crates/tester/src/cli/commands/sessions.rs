@@ -1,6 +1,7 @@
 use crate::cli::args::SessionsCmd;
-use anyhow::{Result, bail};
-use tester_core::error::ExitCode;
+use anyhow::Result;
+use tester_core::error::{AppError, ExitCode};
+use tester_core::i18n::{self, Msg};
 
 pub(crate) fn cmd_sessions(action: SessionsCmd) -> Result<ExitCode> {
     use tester_agent::session_store::{self, PruneSpec};
@@ -36,10 +37,10 @@ pub(crate) fn cmd_sessions(action: SessionsCmd) -> Result<ExitCode> {
             } else if let Some(id) = id {
                 PruneSpec::Id(id)
             } else {
-                bail!("укажите id | --all | --workspace | --older-than");
+                return Err(AppError::PruneNeedsArg.into());
             };
             let n = session_store::prune(spec)?;
-            println!("pruned {n}");
+            println!("{}", i18n::tr(Msg::PruneCli, &[("n", &n.to_string())]));
             Ok(ExitCode(0))
         }
     }

@@ -4,7 +4,7 @@ use crate::files::{active_at_needle, extract_at_specs, list_at_candidates, read_
 use crate::health::HealthProbe;
 use crate::overlays::{
     BranchOverlay, ChatSessionsOverlay, DiffOverlay, ManualOverlay, Overlay, OverlayAction,
-    PlanDecision, PlanOverlay, SessionListOverlay,
+    PlanDecision, PlanOverlay, SecurityOverlay, SessionListOverlay,
 };
 use crate::popup::{Popup, PopupItem, draw_popup, place_above, popup_height};
 use crate::theme::{Theme, truncate_middle};
@@ -58,6 +58,7 @@ const SLASH_CMDS: &[&str] = &[
     "diff",
     "branch",
     "propose_plan",
+    "security",
 ];
 
 fn slash_desc(cmd: &str) -> &'static str {
@@ -84,6 +85,7 @@ fn slash_desc(cmd: &str) -> &'static str {
         "diff" => i18n::t(Msg::SlashDiff),
         "branch" => i18n::t(Msg::SlashBranch),
         "propose_plan" => i18n::t(Msg::SlashProposePlan),
+        "security" => i18n::t(Msg::SlashSecurity),
         _ => "",
     }
 }
@@ -1108,6 +1110,10 @@ impl SessionScreen {
                 }
             }
             "diff" => self.overlay = Some(Overlay::Diff(DiffOverlay::from_git(&self.path))),
+            "security" => {
+                let deep = parts.next() == Some("deep");
+                self.overlay = Some(Overlay::Security(SecurityOverlay::scan(&self.path, deep)));
+            }
             "branch" => self.overlay = Some(Overlay::Branch(BranchOverlay::from_git(&self.path))),
             other => self.push_system(format!("/{other}: {}", i18n::t(Msg::SessionUnknownCmd))),
         }

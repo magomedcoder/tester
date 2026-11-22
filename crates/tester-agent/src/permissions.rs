@@ -1,6 +1,7 @@
 use crate::tools::ToolKind;
 use std::io::{self, Write};
 use std::sync::Arc;
+use tester_core::i18n::{self, Msg};
 
 pub type ConfirmFn = Arc<dyn Fn(&str, &str) -> bool + Send + Sync>;
 
@@ -91,7 +92,10 @@ fn confirm(tool: &str, preview: &str) -> bool {
         return false;
     }
     let preview: String = preview.chars().take(200).collect();
-    eprint!("Allow {tool}? {preview} [y/N] ");
+    eprint!(
+        "{}",
+        i18n::tr(Msg::PermPromptCli, &[("tool", tool), ("preview", &preview)])
+    );
     let _ = io::stderr().flush();
     let mut line = String::new();
     if io::stdin().read_line(&mut line).is_err() {

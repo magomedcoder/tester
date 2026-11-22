@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 use tester_core::config::Config;
+use tester_core::i18n::{self, Msg};
 use tester_core::model::{Draft, ProjectProfile, TestKind};
 use tester_lang::adapter;
 use tracing::{info, warn};
@@ -33,7 +34,7 @@ pub fn validate_draft(
     let adapter = adapter::adapter_for(profile.language)?;
     let argv = adapter.validate_command(profile, draft);
     if argv.is_empty() {
-        bail!("пустая команда проверки");
+        bail!("{}", i18n::t(Msg::ErrEmptyValidateCommand));
     }
 
     let command = argv.join(" ");
@@ -98,7 +99,7 @@ fn validate_ui(
             guard.0 = Some(spawn_shell(start, &profile.root)?);
             wait_for_url(&base, Duration::from_secs(45))?;
         } else {
-            bail!("UI base_url {base} недоступен, а tests.ui.start не задан");
+            bail!("{}", i18n::tr(Msg::ErrUiBaseUnavailable, &[("base", &base)]));
         }
     }
 
@@ -168,7 +169,13 @@ fn spawn_shell(start: &str, cwd: &Path) -> Result<Child> {
     };
     std::thread::sleep(Duration::from_millis(300));
     if let Ok(Some(status)) = child.try_wait() {
-        bail!("команда старта UI завершилась рано с {status}: {start}");
+        bail!(
+            "{}",
+            i18n::tr(
+                Msg::ErrUiStartEarly,
+                &[("status", &format!("{status}")), ("start", start)],
+            )
+        );
     }
     Ok(child)
 }
@@ -201,7 +208,7 @@ fn wait_for_url(url: &str, budget: Duration) -> Result<()> {
         }
         std::thread::sleep(Duration::from_millis(250));
     }
-    bail!("таймаут ожидания {url}");
+    bail!("{}", i18n::tr(Msg::ErrWaitUrlTimeout, &[("url", url)]));
 }
 
 fn find_trace(root: &Path) -> Option<PathBuf> {
@@ -256,7 +263,13 @@ fn run_timed(cmd: &mut Command, timeout: Duration) -> Result<TimedOutput> {
                     warn!("проверка превысила таймаут; завершаем процесс");
                     let _ = child.kill();
                     let _ = child.wait();
-                    bail!("проверка превысила таймаут {}с", timeout.as_secs());
+                    bail!(
+                        "{}",
+                        i18n::tr(
+                            Msg::ErrValidateTimeout,
+                            &[("secs", &timeout.as_secs().to_string())],
+                        )
+                    );
                 }
                 std::thread::sleep(Duration::from_millis(100));
             }

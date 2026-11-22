@@ -6,8 +6,6 @@ LLM-агент для генерации и починки тестов: unit, i
 
 ### Сборка из исходников
 
-Cargo workspace (`crates/*`). Из корня репозитория:
-
 ```bash
 cargo build --release -p tester
 # бинарник: target/release/tester
@@ -44,20 +42,24 @@ tester test run /web-app --kind ui
 # Здоровье окружения
 tester doctor /проект
 
+# Защитный security-скан + harden-патч
+tester security scan /проект
+tester security patch /проект --finding F-0001
+
 # Мульти-чат сессии
 tester sessions list
 tester /проект --session <id>
 ```
 
-Конфиг: `<корень>/tester.toml`. По умолчанию `--kind all`; `test run` сразу пишет файлы (отключить: `--dry-run`).
+Конфиг: `~/.tester/tester.toml`.
+По умолчанию `--kind all`; `test run` сразу пишет файлы (отключить: `--dry-run`).
 
 ## Документация
 
-| Тема                           | Ссылка                                       |
-| ------------------------------ | -------------------------------------------- |
-| CLI-команды и глобальные опции | [docs/ru/commands.md](docs/ru/commands.md)   |
-| Интерактивный TUI              | [docs/ru/tui.md](docs/ru/tui.md)             |
-| Конфиг `tester.toml`           | [docs/ru/config.md](docs/ru/config.md)       |
-| Коды выхода и угрозы           | [docs/ru/reference.md](docs/ru/reference.md) |
+- [CLI-команды и глобальные опции](docs/ru/cli.md)
+- [TUI (slash / клавиши)](docs/ru/ui.md)
+- [Конфиг `tester.toml`](docs/ru/config.md)
+- [Коды выхода и угрозы](docs/ru/reference.md)
+- [Security (`tester security`)](docs/ru/cli.md#security)
 
 [English](README.md)

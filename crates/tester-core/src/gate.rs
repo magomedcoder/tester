@@ -1,19 +1,20 @@
+use crate::error::AppError;
 use crate::model::{Draft, TestKind};
-use anyhow::{Result, bail};
+use anyhow::Result;
 
 pub fn check_draft(draft: &Draft) -> Result<()> {
     let c = &draft.content;
     if !has_assertion(c) {
-        bail!("gate: нет утверждения (assert/expect/REQUIRE)");
+        return Err(AppError::GateNoAssertion.into());
     }
     if is_weak_test(c) {
-        bail!("gate: слабый тест (только snapshot/sleep без проверки поведения)");
+        return Err(AppError::GateWeakTest.into());
     }
     if has_forbidden_network(c, draft.kind) {
-        bail!("gate: запрещённая сеть/Docker во внешнем сервисе");
+        return Err(AppError::GateForbiddenNetwork.into());
     }
     if draft.kind == TestKind::Unit && has_heavy_io(c) {
-        bail!("gate: unit-тест тянет сеть/БД - используйте integration");
+        return Err(AppError::GateUnitNetwork.into());
     }
     Ok(())
 }

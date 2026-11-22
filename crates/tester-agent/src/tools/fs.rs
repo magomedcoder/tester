@@ -4,13 +4,18 @@ use anyhow::{Result, bail};
 use regex::Regex;
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
+use tester_core::error::AppError;
+use tester_core::i18n::{self, Msg};
 use tester_core::security::{path_escapes_root, skip_dir_name};
 use walkdir::WalkDir;
 
 fn resolve(ctx: &AgentContext, rel: &str) -> Result<PathBuf> {
     let path = PathBuf::from(rel);
     if path_escapes_root(&ctx.profile.root, &path) {
-        bail!("путь выходит за корень проекта: {rel}");
+        return Err(AppError::PathEscapesRoot {
+            path: rel.to_string(),
+        }
+        .into());
     }
     Ok(ctx.profile.root.join(path))
 }
@@ -421,7 +426,10 @@ impl Tool for ApplyPatch {
         let abs = resolve(ctx, &rel)?;
         let text = std::fs::read_to_string(&abs)?;
         if !text.contains(&old) {
-            bail!("фрагмент old не найден в {rel}");
+            bail!(
+                "{}",
+                i18n::tr(Msg::ErrPatchFragmentNotFound, &[("path", &rel)])
+            );
         }
         let content = text.replacen(&old, &new, 1);
         let kind: TestKind = arg_str_opt(args, "kind")

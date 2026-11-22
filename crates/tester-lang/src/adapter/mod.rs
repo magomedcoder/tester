@@ -9,6 +9,7 @@ mod typescript;
 
 use anyhow::{Result, bail};
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::{
     Capabilities, Draft, Language, ProjectProfile, Symbol, TestKind, TestStyle,
 };
@@ -53,7 +54,15 @@ pub fn adapter_for(language: Language) -> Result<&'static dyn LanguageAdapter> {
                 None
             }
         })
-        .ok_or_else(|| anyhow::anyhow!("нет адаптера для {}", language.as_str()))
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "{}",
+                i18n::tr(
+                    Msg::ErrNoAdapterForLang,
+                    &[("lang", language.as_str())],
+                )
+            )
+        })
 }
 
 pub(crate) fn detect_language(root: &Path) -> Language {
@@ -116,23 +125,25 @@ pub fn ensure_scaffold(profile: &ProjectProfile) -> Result<()> {
 pub(crate) fn discover(root: &Path) -> Result<ProjectProfile> {
     let lang = detect_language(root);
     if lang == Language::Unknown {
-        bail!("не удалось определить язык проекта в {}", root.display());
+        bail!(
+            "{}",
+            i18n::tr(
+                Msg::ErrLangUndetected,
+                &[("root", &root.display().to_string())],
+            )
+        );
     }
     let adapter = adapter_for(lang)?;
     let mut profile = adapter.discover(root)?;
     profile.capabilities = adapter.capabilities(&profile);
     if crate::api_detect::detect_api_surface(root) {
         profile.capabilities.contract = true;
-        profile.notes.push(
-            "обнаружена API-поверхность (OpenAPI/proto/router) - contract kind доступен".into(),
-        );
+        profile.notes.push(i18n::t(Msg::NoteApiSurface).into());
     }
     if matches!(lang, Language::Cpp) {
         profile.capabilities.contract = false;
         profile.capabilities.ui = false;
-        profile
-            .notes
-            .push("C++: contract/UI kinds unsupported; unit+integration через gtest".into());
+        profile.notes.push(i18n::t(Msg::NoteCppKinds).into());
     }
     profile.supported = lang.supported();
     Ok(profile)
@@ -168,7 +179,7 @@ pub fn find_project_root(start: &Path) -> Result<PathBuf> {
             return Ok(cur);
         }
         if !cur.pop() {
-            bail!("манифест проекта не найден");
+            bail!("{}", i18n::t(Msg::ErrProjectManifestNotFound));
         }
     }
 }

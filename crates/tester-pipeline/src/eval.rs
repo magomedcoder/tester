@@ -2,6 +2,7 @@ use anyhow::{Result, bail};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use tester_core::i18n::{self, Msg};
 use tester_core::model::{Language, ProjectProfile};
 use tester_lang::discover::discover;
 use tester_lang::index::index_symbols;
@@ -73,7 +74,7 @@ pub fn eval_report(path: &Path, max_symbols: usize, try_external: bool) -> Resul
         .take(max_symbols.max(1))
         .collect();
     if targets.is_empty() {
-        bail!("нет покрытого чистого символа для мутации");
+        bail!("{}", i18n::t(Msg::ErrNoMutationTarget));
     }
 
     let mut items = Vec::new();
@@ -106,7 +107,7 @@ pub fn eval_report(path: &Path, max_symbols: usize, try_external: bool) -> Resul
     }
 
     if items.is_empty() {
-        bail!("не удалось применить ни одну мутацию");
+        bail!("{}", i18n::t(Msg::ErrNoMutationApplied));
     }
     let caught = items.iter().filter(|i| i.caught).count() as f64;
     let score = caught / items.len() as f64;
@@ -120,7 +121,13 @@ pub fn eval_report(path: &Path, max_symbols: usize, try_external: bool) -> Resul
 pub fn eval_suite(fixtures_root: &Path) -> Result<String> {
     let mut rows = Vec::new();
     if !fixtures_root.is_dir() {
-        bail!("нет каталога fixtures: {}", fixtures_root.display());
+        bail!(
+            "{}",
+            i18n::tr(
+                Msg::ErrNoFixturesDir,
+                &[("path", &fixtures_root.display().to_string())],
+            )
+        );
     }
     for entry in std::fs::read_dir(fixtures_root)? {
         let entry = entry?;

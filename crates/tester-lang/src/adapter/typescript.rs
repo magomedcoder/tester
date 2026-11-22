@@ -2,6 +2,7 @@ use super::LanguageAdapter;
 use crate::index;
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::*;
 
 pub struct TypeScriptAdapter;
@@ -18,7 +19,7 @@ impl LanguageAdapter for TypeScriptAdapter {
     fn discover(&self, root: &Path) -> Result<ProjectProfile> {
         let pkg_path = root.join("package.json");
         let text = std::fs::read_to_string(&pkg_path)
-            .with_context(|| format!("чтение {}", pkg_path.display()))?;
+            .with_context(|| i18n::io_ctx(Msg::IoRead, &pkg_path))?;
         let pkg: serde_json::Value = serde_json::from_str(&text)?;
 
         let package_name = pkg

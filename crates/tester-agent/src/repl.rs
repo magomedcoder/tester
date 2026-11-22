@@ -49,11 +49,23 @@ pub fn run_repl(ctx: &AgentContext) -> Result<()> {
         session = load_session(&ctx.profile.root).unwrap_or(session);
         println!("{}", outcome.final_text);
         eprintln!(
-            "- turns={} tools={} tokens≈{} {}",
-            outcome.turns,
-            outcome.tool_calls,
-            outcome.usage.total(),
-            if outcome.cancelled { "(cancelled)" } else { "" }
+            "{}",
+            i18n::tr(
+                Msg::ReplTurnsLine,
+                &[
+                    ("turns", &outcome.turns.to_string()),
+                    ("tools", &outcome.tool_calls.to_string()),
+                    ("tokens", &outcome.usage.total().to_string()),
+                    (
+                        "status",
+                        if outcome.cancelled {
+                            i18n::t(Msg::SessionOutcomeCancelled)
+                        } else {
+                            ""
+                        }
+                    ),
+                ],
+            )
         );
         eprintln!("{}", ctx.audit.summary());
     }
@@ -150,7 +162,7 @@ fn handle_slash(ctx: &AgentContext, session: &mut AgentSession, cmd: &str) -> Re
             let args = serde_json::json!({"pattern": pattern});
             let out = tools::default_registry(ctx)
                 .get("grep")
-                .ok_or_else(|| anyhow::anyhow!("grep missing"))?
+                .ok_or_else(|| anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "grep")])))?
                 .execute(ctx, &args)?;
             println!("{out}");
             Ok(SlashAction::Continue)
@@ -164,7 +176,9 @@ fn handle_slash(ctx: &AgentContext, session: &mut AgentSession, cmd: &str) -> Re
             let args = serde_json::json!({"name": name});
             let out = tools::default_registry(ctx)
                 .get("find_symbol")
-                .ok_or_else(|| anyhow::anyhow!("find_symbol missing"))?
+                .ok_or_else(|| {
+                    anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "find_symbol")]))
+                })?
                 .execute(ctx, &args)?;
             println!("{out}");
             Ok(SlashAction::Continue)
@@ -178,7 +192,9 @@ fn handle_slash(ctx: &AgentContext, session: &mut AgentSession, cmd: &str) -> Re
             let args = serde_json::json!({"name": name});
             let out = tools::default_registry(ctx)
                 .get("find_references")
-                .ok_or_else(|| anyhow::anyhow!("find_references missing"))?
+                .ok_or_else(|| {
+                    anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "find_references")]))
+                })?
                 .execute(ctx, &args)?;
             println!("{out}");
             Ok(SlashAction::Continue)
@@ -192,7 +208,9 @@ fn handle_slash(ctx: &AgentContext, session: &mut AgentSession, cmd: &str) -> Re
             let args = serde_json::json!({"query": q});
             let out = tools::default_registry(ctx)
                 .get("semantic_search")
-                .ok_or_else(|| anyhow::anyhow!("semantic_search missing"))?
+                .ok_or_else(|| {
+                    anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "semantic_search")]))
+                })?
                 .execute(ctx, &args)?;
             println!("{out}");
             Ok(SlashAction::Continue)
@@ -209,7 +227,9 @@ fn handle_slash(ctx: &AgentContext, session: &mut AgentSession, cmd: &str) -> Re
                 let args = serde_json::json!({});
                 let out = tools::default_registry(ctx)
                     .get("index_status")
-                    .ok_or_else(|| anyhow::anyhow!("index_status missing"))?
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "index_status")]))
+                    })?
                     .execute(ctx, &args)?;
                 println!("{out}");
             }
@@ -219,7 +239,9 @@ fn handle_slash(ctx: &AgentContext, session: &mut AgentSession, cmd: &str) -> Re
             let args = serde_json::json!({});
             let out = tools::default_registry(ctx)
                 .get("project_map")
-                .ok_or_else(|| anyhow::anyhow!("project_map missing"))?
+                .ok_or_else(|| {
+                    anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "project_map")]))
+                })?
                 .execute(ctx, &args)?;
             println!("{out}");
             Ok(SlashAction::Continue)
@@ -233,7 +255,9 @@ fn handle_slash(ctx: &AgentContext, session: &mut AgentSession, cmd: &str) -> Re
             let args = serde_json::json!({"path": path});
             let out = tools::default_registry(ctx)
                 .get("outline_file")
-                .ok_or_else(|| anyhow::anyhow!("outline_file missing"))?
+                .ok_or_else(|| {
+                    anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "outline_file")]))
+                })?
                 .execute(ctx, &args)?;
             println!("{out}");
             Ok(SlashAction::Continue)

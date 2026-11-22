@@ -1,4 +1,7 @@
-# Команды
+# CLI-команды
+
+Внешние команды терминала (`tester test ...`, `agent`, `security`, ...).  
+Slash и клавиши интерфейса: [ui.md](ui.md).
 
 Общий аргумент у большинства команд: `<PATH>` - путь к проекту или любому файлу внутри него (корень ищется по манифесту).
 
@@ -12,7 +15,7 @@
 | `-h`, `--help`        | Справка                                                         |
 | `-V`, `--version`     | Версия                                                          |
 
-Модель, `base_url`, `api_key` и `agent_auto_approve` задаются только в `tester.toml` (`[llm]` / `[run]`). Локаль: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` в `tester.toml` -> `en`.
+Модель, `base_url`, `api_key` и `agent_auto_approve` - в `~/.tester/tester.toml` и/или `<проект>/tester.toml` (`[llm]` / `[run]`; проект перекрывает). Локаль: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` в toml -> `en`.
 
 ## Тестовый пайплайн (`tester test ...`)
 
@@ -136,7 +139,7 @@ tester chat /путь-проекту
 
 В `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/clear`, `/audit`, `/grep`, `/symbol`, `/refs`, `/search`, `/index`, `/map`, `/list_files`, `/show_file`, `/exit`.
 
-Полноэкранный UI: [tui.md](tui.md).
+Команды интерфейса (slash / клавиши): [ui.md](ui.md).
 
 ## `sessions`
 
@@ -151,7 +154,53 @@ tester sessions prune --older-than 30
 tester sessions prune --all
 ```
 
-В TUI: `/session` picker`/session new``/session <id>``/prune ...`. `/recent` - **проекты**, не chat-сессии.
+В TUI: `/session` picker, `/session new`, `/session <id>`, `/prune ...`. `/recent` - **проекты**, не chat-сессии.
+
+## `security`
+
+Только защита: detect -> explain -> harden. Без генерации эксплойтов.
+
+```bash
+tester security scan /путь/к/проекту
+tester security scan /путь/к/проекту --deep --format json
+tester security scan /путь/к/проекту --md --fail-on high
+tester security explain /путь/к/проекту F-0001
+tester security patch /путь/к/проекту --finding F-0001          # dry-run
+tester security patch /путь/к/проекту --finding F-0001 --apply
+tester security patch /путь/к/проекту --finding F-0001 --llm --apply
+```
+
+Код выхода `2`, если есть findings ≥ `--fail-on` (по умолчанию `high`).
+
+### Конфиг (`[security]` в `tester.toml`)
+
+```toml
+[security]
+enabled = true
+deep = false
+fetch_advisories = false
+severities = ["critical", "high", "medium", "low", "info"]
+auto_patch = false
+disabled_rules = []
+max_files = 4000
+```
+
+Подробнее по всем ключам: [config.md](config.md).
+
+### Agent / TUI
+
+| Канал       | Как                                                                       |
+| ----------- | ------------------------------------------------------------------------- |
+| Agent tools | `security_scan` (read-only), `security_explain`, `security_patch` (write) |
+| TUI         | `/security` - overlay с отчётом; `/security deep` - taint                 |
+
+### Что сканируется
+
+- Секреты / high-entropy / `.env`
+- Опасные sinks (exec, eval, pickle, yaml.load, SQL concat, ...)
+- CI/Docker (`curl|sh`, privileged, docker.sock)
+- Опционально OSV (`--fetch-advisories`)
+- Deep: source->sink в одном файле
 
 ## `ui init`
 

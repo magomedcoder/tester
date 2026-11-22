@@ -3,8 +3,8 @@
     clippy::needless_range_loop,
     clippy::obfuscated_if_else,
     clippy::ptr_arg,
-    clippy::collapsible_if,
-    )]
+    clippy::collapsible_if
+)]
 
 mod agent_loop;
 mod audit;
@@ -21,8 +21,8 @@ pub mod tools;
 #[cfg(test)]
 mod tests;
 
-pub use agent_loop::{AgentOptions, AgentOutcome, OnDelta};
 pub(crate) use agent_loop::AgentLoop;
+pub use agent_loop::{AgentOptions, AgentOutcome, OnDelta};
 pub use audit::AuditLog;
 pub use permissions::PermissionPolicy;
 pub use repl::run_repl;
@@ -31,6 +31,7 @@ pub(crate) use session::{load_session, save_session};
 
 use anyhow::Result;
 use std::sync::Arc;
+use tester_core::i18n::{self, Msg};
 use std::sync::atomic::AtomicBool;
 use tester_core::config::Config;
 use tester_core::model::ProjectProfile;
@@ -64,10 +65,7 @@ pub fn open_context_with_policy(
         profile.android_opt_in = true;
     }
     if config.run.allow_docker {
-        profile.notes.push(
-            "allow_docker=true: tool docker_info доступен агенту; внешние сервисы по-прежнему не поднимаются автоматически"
-                .into(),
-        );
+        profile.notes.push(i18n::t(Msg::NoteDockerAllowed).into());
     }
     let llm = tester_llm::create_client(&config.llm)?;
     let yes = config.run.agent_auto_approve;

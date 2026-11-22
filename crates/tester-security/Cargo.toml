@@ -1,0 +1,22 @@
+[package]
+name = "tester-security"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Defensive security scan and harden patches for Tester"
+
+[dependencies]
+anyhow = { workspace = true }
+regex = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tester-core = { workspace = true }
+tester-lang = { workspace = true }
+tester-llm = { workspace = true }
+toml = { workspace = true }
+tracing = { workspace = true }
+walkdir = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -1,6 +1,7 @@
+use crate::i18n::{self, Msg};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -11,6 +12,54 @@ pub struct Config {
     pub run: RunConfig,
     #[serde(default)]
     pub analysis: AnalysisConfig,
+    #[serde(default)]
+    pub security: SecurityConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    #[serde(default)]
+    pub deep: bool,
+    #[serde(default)]
+    pub fetch_advisories: bool,
+    #[serde(default = "default_security_severities")]
+    pub severities: Vec<String>,
+    #[serde(default)]
+    pub auto_patch: bool,
+    #[serde(default)]
+    pub disabled_rules: Vec<String>,
+    #[serde(default = "default_security_max_files")]
+    pub max_files: usize,
+}
+
+impl Default for SecurityConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            deep: false,
+            fetch_advisories: false,
+            severities: default_security_severities(),
+            auto_patch: false,
+            disabled_rules: Vec::new(),
+            max_files: default_security_max_files(),
+        }
+    }
+}
+
+fn default_security_severities() -> Vec<String> {
+    vec![
+        "critical".into(),
+        "high".into(),
+        "medium".into(),
+        "low".into(),
+        "info".into(),
+    ]
+}
+
+fn default_security_max_files() -> usize {
+    4000
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -142,7 +191,7 @@ pub struct RunConfig {
     pub concurrency: u32,
     #[serde(default = "default_max_items")]
     pub max_items: u32,
-    #[serde(default)]
+    #[serde(default = "default_agent_auto_approve")]
     pub agent_auto_approve: bool,
 }
 
@@ -159,9 +208,13 @@ impl Default for RunConfig {
             agent_deadline_secs: default_agent_deadline(),
             concurrency: default_concurrency(),
             max_items: default_max_items(),
-            agent_auto_approve: false,
+            agent_auto_approve: default_agent_auto_approve(),
         }
     }
+}
+
+fn default_agent_auto_approve() -> bool {
+    true
 }
 
 fn default_concurrency() -> u32 {
@@ -203,33 +256,123 @@ struct RawConfig {
     tests: Option<TestsConfig>,
     run: Option<RunConfig>,
     analysis: Option<AnalysisConfig>,
+    security: Option<SecurityConfig>,
+}
+
+pub fn tester_home() -> PathBuf {
+    if let Ok(p) = std::env::var("TESTER_HOME") {
+        return PathBuf::from(p);
+    }
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join(".tester")
+}
+
+pub fn global_config_path() -> PathBuf {
+    tester_home().join("tester.toml")
+}
+
+const GLOBAL_CONFIG_TEMPLATE: &str = r#"# Global Tester config (~/.tester/tester.toml or $TESTER_HOME/tester.toml).
+# Project <root>/tester.toml overlays this file (deep merge).
+
+locale = "en"
+
+[llm]
+base_url = "http://127.0.0.1:11434/v1"
+model = ""
+api_key = ""
+
+[run]
+agent_auto_approve = true
+allow_docker = false
+
+[analysis]
+embeddings = false
+
+[security]
+enabled = true
+deep = false
+fetch_advisories = false
+"#;
+
+pub fn ensure_global_config() -> Result<PathBuf> {
+    let home = tester_home();
+    std::fs::create_dir_all(&home).with_context(|| i18n::io_ctx(Msg::IoCreate, &home))?;
+    let path = home.join("tester.toml");
+    if !path.exists() {
+        std::fs::write(&path, GLOBAL_CONFIG_TEMPLATE)
+            .with_context(|| i18n::io_ctx(Msg::IoWrite, &path))?;
+    }
+    Ok(path)
+}
+
+fn read_toml_file(path: &Path) -> Result<Option<toml::Value>> {
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let text = std::fs::read_to_string(path).with_context(|| i18n::io_ctx(Msg::IoRead, &path))?;
+    let value = toml::from_str(&text).with_context(|| i18n::io_ctx(Msg::IoParse, &path))?;
+    Ok(Some(value))
+}
+
+fn merge_toml(base: toml::Value, overlay: toml::Value) -> toml::Value {
+    match (base, overlay) {
+        (toml::Value::Table(mut base_map), toml::Value::Table(overlay_map)) => {
+            for (key, value) in overlay_map {
+                let next = match base_map.remove(&key) {
+                    Some(prev) => merge_toml(prev, value),
+                    None => value,
+                };
+                base_map.insert(key, next);
+            }
+            toml::Value::Table(base_map)
+        }
+        (_, overlay) => overlay,
+    }
+}
+
+fn config_from_raw(raw: RawConfig) -> Config {
+    Config {
+        locale: raw.locale,
+        llm: raw.llm.unwrap_or_else(|| LlmConfig {
+            base_url: default_base_url(),
+            model: String::new(),
+            api_key: None,
+            max_tokens: default_max_tokens(),
+            timeout_secs: default_llm_timeout(),
+        }),
+        tests: raw.tests.unwrap_or_default(),
+        run: raw.run.unwrap_or_default(),
+        analysis: raw.analysis.unwrap_or_default(),
+        security: raw.security.unwrap_or_default(),
+    }
 }
 
 impl Config {
     pub fn load(path: &Path) -> Result<Self> {
         let root = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-        let file = root.join("tester.toml");
-        let raw = if file.exists() {
-            let text = std::fs::read_to_string(&file)
-                .with_context(|| format!("чтение {}", file.display()))?;
-            toml::from_str(&text).with_context(|| format!("разбор {}", file.display()))?
-        } else {
+        let mut merged = toml::Value::Table(toml::map::Map::new());
+
+        let global_path = ensure_global_config()?;
+        if let Some(global) = read_toml_file(&global_path)? {
+            merged = merge_toml(merged, global);
+        }
+        let workspace = root.join("tester.toml");
+        if let Some(local) = read_toml_file(&workspace)? {
+            merged = merge_toml(merged, local);
+        }
+
+        let raw: RawConfig = if matches!(&merged, toml::Value::Table(t) if t.is_empty()) {
             RawConfig::default()
+        } else {
+            merged
+                .try_into()
+                .with_context(|| format!("разбор конфига (global + {})", workspace.display()))?
         };
 
-        let config = Config {
-            locale: raw.locale,
-            llm: raw.llm.unwrap_or_else(|| LlmConfig {
-                base_url: default_base_url(),
-                model: String::new(),
-                api_key: None,
-                max_tokens: default_max_tokens(),
-                timeout_secs: default_llm_timeout(),
-            }),
-            tests: raw.tests.unwrap_or_default(),
-            run: raw.run.unwrap_or_default(),
-            analysis: raw.analysis.unwrap_or_default(),
-        };
+        let config = config_from_raw(raw);
         crate::i18n::apply_config_locale(config.locale.as_deref());
         Ok(config)
     }
@@ -239,13 +382,47 @@ impl Config {
 mod tests {
     use super::*;
     use std::io::Write;
+    use std::sync::Mutex;
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    fn with_empty_home<T>(f: impl FnOnce() -> T) -> T {
+        let home = tempfile::tempdir().unwrap();
+        with_tester_home(home.path(), f)
+    }
+
+    fn with_tester_home<T>(home: &Path, f: impl FnOnce() -> T) -> T {
+        let _guard = ENV_LOCK.lock().unwrap();
+        unsafe { std::env::set_var("TESTER_HOME", home) };
+        let out = f();
+        unsafe { std::env::remove_var("TESTER_HOME") };
+        out
+    }
 
     #[test]
     fn loads_defaults_without_file() {
         let dir = tempfile::tempdir().unwrap();
-        let cfg = Config::load(dir.path()).unwrap();
+        let home = tempfile::tempdir().unwrap();
+        let cfg = with_tester_home(home.path(), || Config::load(dir.path()).unwrap());
+        assert!(home.path().join("tester.toml").is_file());
         assert_eq!(cfg.run.repair_attempts, 3);
+        assert!(cfg.run.agent_auto_approve);
         assert_eq!(cfg.tests.ui.framework, "playwright");
+    }
+
+    #[test]
+    fn ensure_global_config_creates_once() {
+        let home = tempfile::tempdir().unwrap();
+        with_tester_home(home.path(), || {
+            let path = ensure_global_config().unwrap();
+            assert!(path.is_file());
+            let first = std::fs::read_to_string(&path).unwrap();
+            std::fs::write(&path, "locale = \"ru\"\n").unwrap();
+            ensure_global_config().unwrap();
+            let second = std::fs::read_to_string(&path).unwrap();
+            assert_eq!(second, "locale = \"ru\"\n");
+            assert!(first.contains("[llm]"));
+        });
     }
 
     #[test]
@@ -264,10 +441,57 @@ android_opt_in = true
 "#
         )
         .unwrap();
-        let cfg = Config::load(dir.path()).unwrap();
+        let cfg = with_empty_home(|| Config::load(dir.path()).unwrap());
         assert_eq!(cfg.llm.model, "demo-model");
         assert_eq!(cfg.llm.api_key.as_deref(), Some("sk-test"));
         assert_eq!(cfg.run.repair_attempts, 2);
+        assert!(cfg.run.android_opt_in);
+        assert!(cfg.run.agent_auto_approve);
+    }
+
+    #[test]
+    fn agent_auto_approve_can_be_disabled() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut f = std::fs::File::create(dir.path().join("tester.toml")).unwrap();
+        write!(f, "[run]\nagent_auto_approve = false\n").unwrap();
+        let cfg = with_empty_home(|| Config::load(dir.path()).unwrap());
+        assert!(!cfg.run.agent_auto_approve);
+    }
+
+    #[test]
+    fn global_config_merges_under_workspace() {
+        let home = tempfile::tempdir().unwrap();
+        let project = tempfile::tempdir().unwrap();
+
+        std::fs::write(
+            home.path().join("tester.toml"),
+            r#"
+[llm]
+base_url = "http://global:11434/v1"
+model = "global-model"
+api_key = "sk-global"
+[run]
+repair_attempts = 9
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            project.path().join("tester.toml"),
+            r#"
+[llm]
+model = "project-model"
+[run]
+android_opt_in = true
+"#,
+        )
+        .unwrap();
+
+        let cfg = with_tester_home(home.path(), || Config::load(project.path()).unwrap());
+
+        assert_eq!(cfg.llm.model, "project-model");
+        assert_eq!(cfg.llm.base_url, "http://global:11434/v1");
+        assert_eq!(cfg.llm.api_key.as_deref(), Some("sk-global"));
+        assert_eq!(cfg.run.repair_attempts, 9);
         assert!(cfg.run.android_opt_in);
     }
 }

@@ -6,6 +6,7 @@ use crate::tools::{ToolKind, ToolRegistry};
 use anyhow::{Result, bail};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
+use tester_core::i18n::{self, Msg};
 use tester_llm::{ChatMessage, Usage};
 use tracing::{info, warn};
 
@@ -70,7 +71,10 @@ impl<'a> AgentLoop<'a> {
             }
             if started.elapsed() > deadline {
                 warn!("deadline агента исчерпан");
-                bail!("агент превысил deadline {}s", self.opts.deadline_secs);
+                bail!(i18n::tr(
+                    Msg::AgentDeadline,
+                    &[("secs", &self.opts.deadline_secs.to_string())]
+                ));
             }
 
             maybe_compact(
@@ -79,7 +83,10 @@ impl<'a> AgentLoop<'a> {
                 self.ctx.config.run.max_context_chars,
             )?;
 
-            progress.step(&format!("ход {turn}: вызов модели"));
+            progress.step(&i18n::tr(
+                Msg::AgentStepModel,
+                &[("turn", &turn.to_string())],
+            ));
             session.turns = session.turns.saturating_add(1);
 
             let tools = self.registry.specs();
@@ -114,7 +121,7 @@ impl<'a> AgentLoop<'a> {
                 session
                     .messages
                     .push(ChatMessage::assistant(result.content, vec![]));
-                progress.step("готово");
+                progress.step(i18n::t(Msg::AgentStepDone));
                 break;
             }
 
@@ -138,7 +145,10 @@ impl<'a> AgentLoop<'a> {
                     break;
                 }
                 if session.tool_calls >= self.opts.max_tool_calls {
-                    bail!("превышен max_tool_calls ({})", self.opts.max_tool_calls);
+                    bail!(i18n::tr(
+                        Msg::MaxToolCalls,
+                        &[("n", &self.opts.max_tool_calls.to_string())]
+                    ));
                 }
                 session.tool_calls = session.tool_calls.saturating_add(1);
 
@@ -148,7 +158,10 @@ impl<'a> AgentLoop<'a> {
                     Err(err) => format!("ошибка инструмента: {err:#}"),
                 };
                 info!(tool = %tc.function.name, "tool_result");
-                progress.step(&format!("tool {}", tc.function.name));
+                progress.step(&i18n::tr(
+                    Msg::AgentStepTool,
+                    &[("name", &tc.function.name)],
+                ));
                 session
                     .messages
                     .push(ChatMessage::tool(&tc.id, truncate_result(&content)));
@@ -159,7 +172,9 @@ impl<'a> AgentLoop<'a> {
             }
 
             if turn == self.opts.max_turns {
-                final_text = result.content.unwrap_or_else(|| "(лимит ходов)".into());
+                final_text = result
+                    .content
+                    .unwrap_or_else(|| i18n::t(Msg::AgentTurnLimit).into());
             }
         }
 
@@ -178,7 +193,7 @@ impl<'a> AgentLoop<'a> {
         let tool = self
             .registry
             .get(name)
-            .ok_or_else(|| anyhow::anyhow!("неизвестный tool: {name}"))?;
+            .ok_or_else(|| anyhow::anyhow!(i18n::tr(Msg::UnknownTool, &[("name", name)])))?;
         let args: serde_json::Value = serde_json::from_str(arguments)
             .unwrap_or_else(|_| serde_json::json!({ "raw": arguments }));
         let preview = arguments.chars().take(120).collect::<String>();

@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::TestPlan;
 
 fn plan_path(root: &Path) -> PathBuf {
@@ -12,13 +13,12 @@ pub fn save_plan(root: &Path, plan: &TestPlan) -> Result<()> {
         std::fs::create_dir_all(parent)?;
     }
     std::fs::write(&path, serde_json::to_string_pretty(plan)?)
-        .with_context(|| format!("запись {}", path.display()))?;
+        .with_context(|| i18n::io_ctx(Msg::IoWrite, &path))?;
     Ok(())
 }
 
 pub fn load_plan(root: &Path) -> Result<TestPlan> {
     let path = plan_path(root);
-    let text =
-        std::fs::read_to_string(&path).with_context(|| format!("чтение {}", path.display()))?;
+    let text = std::fs::read_to_string(&path).with_context(|| i18n::io_ctx(Msg::IoRead, &path))?;
     Ok(serde_json::from_str(&text)?)
 }

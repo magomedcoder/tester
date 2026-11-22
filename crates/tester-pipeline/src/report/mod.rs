@@ -151,10 +151,12 @@ pub fn exit_for(report: &RunReport) -> i32 {
 }
 
 pub fn render_usage(usage: &tester_llm::Usage) -> String {
-    format!(
-        "usage: prompt={} completion={} total={}",
-        usage.prompt_tokens,
-        usage.completion_tokens,
-        usage.total()
+    i18n::tr(
+        Msg::UsageLine,
+        &[
+            ("prompt", &usage.prompt_tokens.to_string()),
+            ("completion", &usage.completion_tokens.to_string()),
+            ("total", &usage.total().to_string()),
+        ],
     )
 }

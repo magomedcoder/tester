@@ -1,9 +1,10 @@
 use crate::cli::helpers::{build_agent_ctx, mirror_cancel};
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tester_agent::{run_one_shot, run_repl};
-use tester_core::error::ExitCode;
+use tester_core::error::{AppError, ExitCode};
+use tester_core::i18n::{self, Msg};
 use tester_pipeline::report::render_usage;
 
 pub(crate) fn cmd_agent(
@@ -19,11 +20,21 @@ pub(crate) fn cmd_agent(
     let outcome = run_one_shot(&ctx, prompt, resume)?;
     println!("{}", outcome.final_text);
     eprintln!("- {}", render_usage(&outcome.usage));
+    let status = if outcome.cancelled {
+        i18n::t(Msg::SessionOutcomeCancelled)
+    } else {
+        i18n::t(Msg::SessionOutcomeOk)
+    };
     eprintln!(
-        "- turns={} tools={} {}",
-        outcome.turns,
-        outcome.tool_calls,
-        if outcome.cancelled { "cancelled" } else { "ok" }
+        "- {}",
+        i18n::tr(
+            Msg::SessionOutcomeLine,
+            &[
+                ("turns", &outcome.turns.to_string()),
+                ("tools", &outcome.tool_calls.to_string()),
+                ("status", &format!(" {status}")),
+            ],
+        )
     );
     eprintln!("{}", ctx.audit.summary());
     Ok(if outcome.cancelled {
@@ -47,7 +58,7 @@ pub(crate) fn cmd_tui(
     plain: bool,
 ) -> Result<ExitCode> {
     if plain {
-        let path = path.ok_or_else(|| anyhow!("`--plain` требует PATH"))?;
+        let path = path.ok_or(AppError::PlainNeedsPath)?;
         return cmd_chat(&path, dry_run, true);
     }
     tester_tui::run(tester_tui::TuiOptions {

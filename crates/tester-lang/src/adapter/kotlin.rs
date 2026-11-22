@@ -3,6 +3,7 @@ use crate::index::iter_source_files;
 use anyhow::Result;
 use regex::Regex;
 use std::path::{Path, PathBuf};
+use tester_core::i18n::{self, Msg};
 use tester_core::model::*;
 
 pub struct KotlinAdapter;
@@ -48,10 +49,7 @@ impl LanguageAdapter for KotlinAdapter {
             .then(|| root.join("src/test/kotlin"));
         p.has_existing_tests = p.tests_dir.is_some();
         if is_android {
-            p.notes.push(
-                "Android-проект: instrumented-тесты требуют run.android_opt_in = true в tester.toml"
-                    .into(),
-            );
+            p.notes.push(i18n::t(Msg::NoteAndroidOptIn).into());
             p.ui_framework = Some("android-instrumented".into());
         }
         p.capabilities = Capabilities {

@@ -5,7 +5,7 @@
 | Code | Meaning                                                  |
 | ---- | -------------------------------------------------------- |
 | `0`  | success                                                  |
-| `2`  | no goals in the plan                                     |
+| `2`  | no goals in the plan / security findings ≥ `--fail-on`   |
 | `3`  | model unavailable                                        |
 | `4`  | test not fixed within repair budget (`unfixed`)          |
 | `5`  | write refused due to path / policy / `--update` required |
