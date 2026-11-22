@@ -34,7 +34,7 @@ tester debug /проект --bug-file /tmp/panic.txt --reproduce-only
 
 # Проверить полезность тестов (мутации)
 tester test eval /проект --max-symbols 5
-tester test eval ./tests/fixtures --suite
+tester test eval /каталог-с-проектами --suite
 
 # UI e2e
 tester ui init /web-app

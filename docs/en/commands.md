@@ -94,7 +94,7 @@ Mutations of covered symbols (arithmetic / boolean / off-by-one / branch / null)
 
 ```bash
 tester test eval /path/to/project --max-symbols 5
-tester test eval /path/to/fixtures --suite
+tester test eval /path/to/projects --suite
 tester test eval /path/to/project --json
 ```
 

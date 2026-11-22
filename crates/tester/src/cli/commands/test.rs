@@ -397,15 +397,7 @@ pub(crate) fn cmd_eval(
     format: OutputFormat,
 ) -> Result<ExitCode> {
     if suite {
-        let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures");
-        let root = if path.join("tests/fixtures").is_dir() {
-            path.join("tests/fixtures")
-        } else if path.file_name().and_then(|s| s.to_str()) == Some("fixtures") {
-            path.clone()
-        } else {
-            fixtures
-        };
-        let text = eval_suite(&root)?;
+        let text = eval_suite(path)?;
         println!("{text}");
         return Ok(ExitCode::OK);
     }

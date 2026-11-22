@@ -34,7 +34,7 @@ tester debug /project --bug-file /tmp/panic.txt --reproduce-only
 
 # Check test usefulness (mutations)
 tester test eval /project --max-symbols 5
-tester test eval ./tests/fixtures --suite
+tester test eval /dir-with-projects --suite
 
 # UI e2e
 tester ui init /web-app

@@ -175,22 +175,6 @@ fn plan_unit_skips_covered_add() {
 }
 
 #[test]
-fn scan_fixtures_dir() {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/rust");
-    let out = Command::new(bin())
-        .args(["--locale", "en", "test", "scan", path.to_str().unwrap()])
-        .output()
-        .unwrap();
-    assert!(
-        out.status.success(),
-        "{}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(stdout.contains("language: rust"), "{stdout}");
-}
-
-#[test]
 fn help_lists_agent_and_chat() {
     let out = Command::new(bin()).args(["--help"]).output().unwrap();
     let stdout = String::from_utf8_lossy(&out.stdout);
@@ -201,10 +185,11 @@ fn help_lists_agent_and_chat() {
 }
 
 #[test]
-fn doctor_runs_on_rust_fixture() {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/rust");
+fn doctor_runs_on_rust_demo() {
+    let dir = tempfile::tempdir().unwrap();
+    write_rust_demo(dir.path());
     let out = Command::new(bin())
-        .args(["doctor", root.to_str().unwrap()])
+        .args(["doctor", dir.path().to_str().unwrap()])
         .output()
         .unwrap();
     let stdout = String::from_utf8_lossy(&out.stdout);

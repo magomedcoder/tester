@@ -94,7 +94,7 @@ tester test repair /путь-проекту
 
 ```bash
 tester test eval /путь-проекту --max-symbols 5
-tester test eval /путь-к/fixtures --suite
+tester test eval /каталог-с-проектами --suite
 tester test eval /путь-проекту --json
 ```
 
