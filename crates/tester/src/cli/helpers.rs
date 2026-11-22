@@ -9,7 +9,7 @@ use tester_core::config::{Config, LlmConfig};
 use tester_core::i18n::{self, Msg};
 use tester_core::model::{ProjectProfile, RunReport, TestKind};
 use tester_lang::discover::discover;
-use tester_llm::{Llm, create_client_with_model, ensure_llm_config};
+use tester_providers::{Llm, create_client_with_model, ensure_llm_config};
 use tester_pipeline::plan::PlanOptions;
 use tester_pipeline::report::{render_json, render_markdown};
 use tracing::level_filters::LevelFilter;
@@ -58,8 +58,8 @@ pub(crate) fn parse_kind(kind: &str) -> Result<TestKind> {
     kind.parse().map_err(|e: String| anyhow!(e))
 }
 
-pub(crate) fn load_config(profile: &ProjectProfile) -> Result<Config> {
-    Config::load(&profile.root)
+pub(crate) fn load_config() -> Result<Config> {
+    Config::load()
 }
 
 pub(crate) fn need_llm_with_model(

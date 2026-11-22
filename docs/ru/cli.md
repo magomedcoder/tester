@@ -16,7 +16,7 @@ Slash и клавиши интерфейса: [ui.md](ui.md).
 | `-h`, `--help`        | Справка                                                         |
 | `-V`, `--version`     | Версия                                                          |
 
-`base_url`, `api_key` и `agent_auto_approve` - в `~/.tester/tester.toml` и/или `<проект>/tester.toml` (`[llm]` / `[run]`; проект перекрывает). 
+`[[providers]]` и `agent_auto_approve` - в `~/.tester/tester.toml` (`[[providers]]` / `[run]`). 
 Model `--model`, `tester models` или TUI `/model` (auto, если на endpoint ровно одна модель; последний выбор в `~/.tester/model`). 
 Локаль: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` в toml -> `en`.
 
@@ -216,7 +216,7 @@ max_files = 4000
 
 ## `ui init`
 
-Минимальный Playwright: `playwright.config.ts`, каталог `e2e/`, секция UI в `tester.toml` (если файла ещё нет), `npm install` + chromium по возможности.
+Минимальный Playwright: `playwright.config.ts`, каталог `e2e/`, `npm install` + chromium по возможности. UI (`[tests.ui]`) - в `~/.tester/tester.toml`.
 
 ```bash
 tester ui init /path/to/web-app

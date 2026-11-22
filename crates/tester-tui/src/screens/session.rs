@@ -31,7 +31,7 @@ use tester_agent::{
 use tester_core::config::Config;
 use tester_core::i18n::{self, Msg};
 use tester_core::model::TestKind;
-use tester_llm::Usage;
+use tester_providers::Usage;
 
 const SPINNER: &[char] = &['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
@@ -155,7 +155,7 @@ impl SessionScreen {
     }
 
     pub fn open(path: PathBuf, dry_run: bool, session_id: Option<String>) -> Self {
-        let ctx_limit = Config::load(&path)
+        let ctx_limit = Config::load()
             .map(|c| (c.run.max_context_chars / 4).max(1) as u32)
             .unwrap_or(6000);
         let mut screen = Self {
@@ -190,7 +190,7 @@ impl SessionScreen {
         match open_context_with_policy(&path, dry_run, false, true) {
             Ok(ctx) => {
                 screen.model = ctx.config.llm.model.clone();
-                screen.base_url = ctx.config.llm.base_url.clone();
+                screen.base_url = ctx.config.llm.base_url().to_string();
                 screen.auto_approve = ctx.config.run.agent_auto_approve;
                 screen.path = ctx.profile.root.clone();
                 screen.health = HealthProbe::new(&screen.base_url);
@@ -816,27 +816,35 @@ impl SessionScreen {
     }
 
     fn open_model_overlay(&mut self, filter: Option<&str>) {
-        let llm = Config::load(&self.path)
+        let llm = Config::load()
             .map(|c| {
                 let mut llm = c.llm;
-                if llm.base_url.trim().is_empty() && !self.base_url.is_empty() {
-                    llm.base_url = self.base_url.clone();
-                }
                 if llm.model.trim().is_empty() && !self.model.is_empty() {
                     llm.model = self.model.clone();
                 }
+                if !self.base_url.is_empty() {
+                    let idx = llm
+                        .providers
+                        .iter()
+                        .position(|p| p.id == llm.active_provider_id)
+                        .unwrap_or(0);
+                    if let Some(p) = llm.providers.get_mut(idx) {
+                        p.base_url = self.base_url.clone();
+                    }
+                }
+                llm.ensure_providers();
                 llm
             })
-            .unwrap_or_else(|_| tester_core::config::LlmConfig {
-                base_url: if self.base_url.is_empty() {
-                    "http://127.0.0.1:11434/v1".into()
-                } else {
-                    self.base_url.clone()
-                },
-                model: self.model.clone(),
-                api_key: None,
-                max_tokens: 4096,
-                timeout_secs: 120,
+            .unwrap_or_else(|_| {
+                let mut llm = tester_core::config::LlmConfig {
+                    model: self.model.clone(),
+                    ..Default::default()
+                };
+                if !self.base_url.is_empty() {
+                    llm.providers[0].base_url = self.base_url.clone();
+                }
+                llm.ensure_providers();
+                llm
             });
         let mut overlay = ModelOverlay::fetch(&llm);
         if let Some(f) = filter {

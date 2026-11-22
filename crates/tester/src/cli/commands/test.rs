@@ -142,7 +142,7 @@ pub(crate) fn cmd_plan(
     if let Some(pkg) = package {
         profile.package_filter = Some(pkg);
     }
-    let config = Config::load(&profile.root)?;
+    let config = Config::load()?;
     apply_config_flags(&mut profile, &config);
     let plan = build_plan_with(&profile, &config, kind, &opts)?;
     match format {
@@ -187,7 +187,7 @@ pub(crate) fn cmd_generate(
     if let Some(pkg) = package {
         profile.package_filter = Some(pkg);
     }
-    let config = load_config(&profile)?;
+    let config = load_config()?;
     apply_config_flags(&mut profile, &config);
     let plan = build_plan_with(&profile, &config, kind, &opts)?;
     if plan.items.is_empty() {
@@ -289,7 +289,7 @@ pub(crate) fn cmd_run(
         }
         .into());
     }
-    let config = load_config(&profile)?;
+    let config = load_config()?;
     apply_config_flags(&mut profile, &config);
     let plan = build_plan_with(&profile, &config, kind, &opts)?;
     if plan.items.is_empty() {
@@ -321,7 +321,7 @@ pub(crate) fn cmd_repair(
     model: Option<&str>,
 ) -> Result<ExitCode> {
     let profile = prepare_project(path)?;
-    let config = load_config(&profile)?;
+    let config = load_config()?;
     let state = load_state(&profile.root)?;
     let llm = need_llm_with_model(&config, model)?;
     let plan = build_plan(&profile, &config, state.kind)?;
@@ -453,7 +453,7 @@ pub(crate) fn cmd_plan_apply(
     model: Option<&str>,
 ) -> Result<ExitCode> {
     let profile = prepare_project(path)?;
-    let config = load_config(&profile)?;
+    let config = load_config()?;
     let plan = tester_pipeline::plan_store::load_plan(&profile.root)?;
     if plan.items.is_empty() {
         return Ok(ExitCode::NO_GOALS);

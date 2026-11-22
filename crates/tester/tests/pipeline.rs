@@ -1,8 +1,12 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn bin() -> PathBuf {
     PathBuf::from(env!("CARGO_BIN_EXE_tester"))
+}
+
+fn with_isolated_home(cmd: &mut Command, home: &Path) {
+    cmd.env("TESTER_HOME", home);
 }
 
 fn write_rust_demo(dir: &std::path::Path) {
@@ -94,8 +98,11 @@ fn write_python_demo(dir: &std::path::Path) {
 #[test]
 fn scan_rust_project() {
     let dir = tempfile::tempdir().unwrap();
+    let home = tempfile::tempdir().unwrap();
     write_rust_demo(dir.path());
-    let out = Command::new(bin())
+    let mut cmd = Command::new(bin());
+    with_isolated_home(&mut cmd, home.path());
+    let out = cmd
         .args([
             "--locale",
             "en",
@@ -125,8 +132,11 @@ fn scan_detects_other_languages() {
     ];
     for (lang, write) in cases {
         let dir = tempfile::tempdir().unwrap();
+        let home = tempfile::tempdir().unwrap();
         write(dir.path());
-        let out = Command::new(bin())
+        let mut cmd = Command::new(bin());
+        with_isolated_home(&mut cmd, home.path());
+        let out = cmd
             .args([
                 "--locale",
                 "en",
@@ -153,8 +163,11 @@ fn scan_detects_other_languages() {
 #[test]
 fn plan_unit_skips_covered_add() {
     let dir = tempfile::tempdir().unwrap();
+    let home = tempfile::tempdir().unwrap();
     write_rust_demo(dir.path());
-    let out = Command::new(bin())
+    let mut cmd = Command::new(bin());
+    with_isolated_home(&mut cmd, home.path());
+    let out = cmd
         .args([
             "test",
             "plan",
@@ -187,8 +200,11 @@ fn help_lists_agent_and_chat() {
 #[test]
 fn doctor_runs_on_rust_demo() {
     let dir = tempfile::tempdir().unwrap();
+    let home = tempfile::tempdir().unwrap();
     write_rust_demo(dir.path());
-    let out = Command::new(bin())
+    let mut cmd = Command::new(bin());
+    with_isolated_home(&mut cmd, home.path());
+    let out = cmd
         .args(["doctor", dir.path().to_str().unwrap()])
         .output()
         .unwrap();
@@ -202,8 +218,11 @@ fn doctor_runs_on_rust_demo() {
 #[test]
 fn plan_show_after_plan() {
     let dir = tempfile::tempdir().unwrap();
+    let home = tempfile::tempdir().unwrap();
     write_rust_demo(dir.path());
-    let _ = Command::new(bin())
+    let mut plan = Command::new(bin());
+    with_isolated_home(&mut plan, home.path());
+    let _ = plan
         .args([
             "test",
             "plan",
@@ -213,7 +232,9 @@ fn plan_show_after_plan() {
         ])
         .output()
         .unwrap();
-    let out = Command::new(bin())
+    let mut show = Command::new(bin());
+    with_isolated_home(&mut show, home.path());
+    let out = show
         .args(["test", "plan", dir.path().to_str().unwrap(), "--show"])
         .output()
         .unwrap();

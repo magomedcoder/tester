@@ -48,20 +48,6 @@ export default defineConfig({
         std::fs::write(&pkg_path, serde_json::to_string_pretty(&pkg)?)?;
     }
 
-    let tester_toml = root.join("tester.toml");
-    if !tester_toml.exists() {
-        let body = r#"[tests.ui]
-framework = "playwright"
-base_url = "http://127.0.0.1:3456"
-start = "python3 -m http.server 3456"
-
-[run]
-repair_attempts = 3
-timeout_secs = 180
-"#;
-        write_bytes(&tester_toml, body.as_bytes())?;
-    }
-
     let status = std::process::Command::new("npm")
         .arg("install")
         .current_dir(&root)

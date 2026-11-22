@@ -47,7 +47,7 @@ fn cmd_scan(
     md: bool,
 ) -> Result<ExitCode> {
     let profile = prepare_project(path)?;
-    let mut config = load_config(&profile)?;
+    let mut config = load_config()?;
     if deep {
         config.security.deep = true;
     }
@@ -69,7 +69,7 @@ fn cmd_scan(
 
 fn cmd_explain(path: &std::path::PathBuf, finding: &str, deep: bool) -> Result<ExitCode> {
     let profile = prepare_project(path)?;
-    let mut config = load_config(&profile)?;
+    let mut config = load_config()?;
     if deep {
         config.security.deep = true;
     }
@@ -87,7 +87,7 @@ fn cmd_patch(
     model: Option<&str>,
 ) -> Result<ExitCode> {
     let profile = prepare_project(path)?;
-    let mut config = load_config(&profile)?;
+    let mut config = load_config()?;
     if deep {
         config.security.deep = true;
     }
@@ -106,7 +106,7 @@ fn cmd_patch(
     let draft = draft_patch(
         &profile,
         &f,
-        llm.as_ref().map(|l| l.as_ref() as &dyn tester_llm::Llm),
+        llm.as_ref().map(|l| l.as_ref() as &dyn tester_providers::Llm),
         apply,
     )?;
     println!(

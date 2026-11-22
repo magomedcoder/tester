@@ -6,7 +6,7 @@ use tester_core::error::AppError;
 use tester_core::i18n::{self, Msg};
 use tester_core::model::ProjectProfile;
 use tester_core::security::path_escapes_root;
-use tester_llm::Llm;
+use tester_providers::Llm;
 
 pub fn explain(report: &SecurityReport, finding_id: &str) -> Result<String> {
     let f = report

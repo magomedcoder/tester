@@ -10,7 +10,7 @@ use anyhow::{Result, anyhow};
 use serde_json::Value;
 use std::sync::Arc;
 use tester_core::i18n::{self, Msg};
-use tester_llm::ToolSpec;
+use tester_providers::ToolSpec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ToolKind {

@@ -340,7 +340,7 @@ y/N для write/shellapprove/reject плана через /propose_plan
             "C++: contract/UI kinds не поддерживаются; unit+integration через gtest"
         }
         Msg::NoteAndroidOptIn => {
-            "Android-проект: instrumented-тесты требуют run.android_opt_in = true в tester.toml"
+            "Android-проект: instrumented-тесты требуют run.android_opt_in = true в ~/.tester/tester.toml"
         }
         Msg::NoteVenv => "найден .venv",
         Msg::NoteLaravel => "обнаружен Laravel",
@@ -387,13 +387,13 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::SessionIdAmbiguous => "неоднозначный id сессии '{prefix}' ({n} совпадений)",
         Msg::ErrNoModels => "на endpoint нет моделей (GET /models пустой)",
         Msg::ErrModelNeedsSelection => {
-            "model не задан: доступно {count} — выберите /model или --model"
+            "model не задан: доступно {count} - выберите /model или --model"
         }
         Msg::SlashModel => "выбрать LLM model (из /models)",
         Msg::ModelOverlayTitle => " модели  Enter выбрать  r обновить  Esc ",
         Msg::ModelOverlayEmpty => "(нет моделей)",
         Msg::ModelSelected => "model: {model}",
-        Msg::ModelSelectHint => "model не задан — /model для выбора (или --model)",
+        Msg::ModelSelectHint => "model не задан - /model для выбора (или --model)",
         Msg::ModelPersisted => "сохранено model={model} в {path}",
         Msg::ModelNotSetBadge => "model?",
         Msg::ModelBusyReject => "нельзя сменить model пока идёт задача",

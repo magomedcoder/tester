@@ -19,7 +19,7 @@ pub struct SecurityOverlay {
 
 impl SecurityOverlay {
     pub fn scan(root: &Path, deep: bool) -> Self {
-        let text = match (discover(root), tester_core::config::Config::load(root)) {
+        let text = match (discover(root), tester_core::config::Config::load()) {
             (Ok(profile), Ok(mut cfg)) => {
                 if deep {
                     cfg.security.deep = true;

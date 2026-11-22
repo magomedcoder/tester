@@ -318,7 +318,7 @@ mod tests {
     fn classifies_tool_and_user() {
         let u = TranscriptEntry::new("you", "hi");
         assert_eq!(u.kind, LineKind::UserInput);
-        let t = TranscriptEntry::new("assistant", "→ grep(x)");
+        let t = TranscriptEntry::new("assistant", "-> grep(x)");
         assert_eq!(t.kind, LineKind::ToolCall);
     }
 

@@ -150,7 +150,7 @@ pub fn exit_for(report: &RunReport) -> i32 {
     tester_core::error::exit_from_report(report).0 as i32
 }
 
-pub fn render_usage(usage: &tester_llm::Usage) -> String {
+pub fn render_usage(usage: &tester_providers::Usage) -> String {
     i18n::tr(
         Msg::UsageLine,
         &[

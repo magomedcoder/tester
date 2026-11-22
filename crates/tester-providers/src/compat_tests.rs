@@ -21,13 +21,12 @@ fn compat_client_against_local_server() {
         let _ = stream.write_all(resp.as_bytes());
     });
 
-    let cfg = LlmConfig {
-        base_url: format!("http://{addr}/v1"),
-        model: "demo".into(),
-        api_key: None,
-        max_tokens: 64,
-        timeout_secs: 5,
-    };
+    let mut cfg = LlmConfig::default();
+    cfg.providers[0].base_url = format!("http://{addr}/v1");
+    cfg.model = "demo".into();
+    cfg.max_tokens = 64;
+    cfg.timeout_secs = 5;
+    cfg.ensure_providers();
     let client = CompatClient::new(&cfg, None).unwrap();
     let out = client.complete("sys", "ping").unwrap();
     assert_eq!(out, "pong");

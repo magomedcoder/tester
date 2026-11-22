@@ -111,21 +111,96 @@ fn default_grep_max_hits() -> u32 {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LlmConfig {
-    #[serde(default = "default_base_url")]
+pub struct LlmProviderConfig {
+    pub id: String,
+    #[serde(default = "default_provider_kind")]
+    pub kind: String,
     pub base_url: String,
-    #[serde(skip)]
-    pub model: String,
     #[serde(default)]
     pub api_key: Option<String>,
+}
+
+fn default_provider_kind() -> String {
+    "openai_compat".into()
+}
+
+fn default_providers() -> Vec<LlmProviderConfig> {
+    vec![LlmProviderConfig {
+        id: "llamacpp".into(),
+        kind: default_provider_kind(),
+        base_url: "http://127.0.0.1:8080/v1".into(),
+        api_key: None,
+    }]
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LlmConfig {
     #[serde(default = "default_max_tokens")]
     pub max_tokens: u32,
     #[serde(default = "default_llm_timeout")]
     pub timeout_secs: u64,
+    #[serde(skip)]
+    pub providers: Vec<LlmProviderConfig>,
+    #[serde(skip)]
+    pub model: String,
+    #[serde(skip)]
+    pub active_provider_id: String,
 }
 
-fn default_base_url() -> String {
-    "http://127.0.0.1:11434/v1".into()
+impl Default for LlmConfig {
+    fn default() -> Self {
+        Self {
+            max_tokens: default_max_tokens(),
+            timeout_secs: default_llm_timeout(),
+            providers: default_providers(),
+            model: String::new(),
+            active_provider_id: String::new(),
+        }
+    }
+}
+
+impl LlmConfig {
+    pub fn ensure_providers(&mut self) {
+        if self.providers.is_empty() {
+            self.providers = default_providers();
+        }
+        if self.active_provider_id.trim().is_empty() {
+            if self.providers.len() == 1 {
+                self.active_provider_id = self.providers[0].id.clone();
+            }
+        } else if !self
+            .providers
+            .iter()
+            .any(|p| p.id == self.active_provider_id)
+        {
+            self.active_provider_id = self
+                .providers
+                .first()
+                .map(|p| p.id.clone())
+                .unwrap_or_default();
+        }
+    }
+
+    pub fn active_provider(&self) -> &LlmProviderConfig {
+        self.providers
+            .iter()
+            .find(|p| p.id == self.active_provider_id)
+            .or_else(|| self.providers.first())
+            .expect("LlmConfig.providers must not be empty")
+    }
+
+    pub fn base_url(&self) -> &str {
+        self.active_provider().base_url.trim_end_matches('/')
+    }
+
+    pub fn api_key(&self) -> Option<&str> {
+        self.active_provider()
+            .api_key
+            .as_deref()
+            .map(str::trim)
+            .filter(|k| !k.is_empty())
+    }
 }
 
 fn default_max_tokens() -> u32 {
@@ -253,6 +328,8 @@ fn default_max_context() -> usize {
 #[derive(Debug, Deserialize, Default)]
 struct RawConfig {
     locale: Option<String>,
+    #[serde(default)]
+    providers: Vec<LlmProviderConfig>,
     llm: Option<LlmConfig>,
     tests: Option<TestsConfig>,
     run: Option<RunConfig>,
@@ -274,8 +351,10 @@ pub fn tester_home() -> PathBuf {
 const GLOBAL_CONFIG_TEMPLATE: &str = r#"
 locale = "en"
 
-[llm]
-base_url = "http://127.0.0.1:11434/v1"
+[[providers]]
+id = "llamacpp"
+kind = "openai_compat"
+base_url = "http://127.0.0.1:8080/v1"
 # api_key = ""
 
 [run]
@@ -306,6 +385,10 @@ fn llm_model_path() -> PathBuf {
     tester_home().join("model")
 }
 
+fn llm_provider_path() -> PathBuf {
+    tester_home().join("provider")
+}
+
 fn load_llm_model() -> Option<String> {
     let text = std::fs::read_to_string(llm_model_path()).ok()?;
     let id = text.trim();
@@ -314,6 +397,30 @@ fn load_llm_model() -> Option<String> {
     } else {
         Some(id.to_string())
     }
+}
+
+fn load_llm_provider() -> Option<String> {
+    let text = std::fs::read_to_string(llm_provider_path()).ok()?;
+    let id = text.trim();
+    if id.is_empty() {
+        None
+    } else {
+        Some(id.to_string())
+    }
+}
+
+pub fn persist_llm_provider(provider_id: &str) -> Result<PathBuf> {
+    let id = provider_id.trim();
+    if id.is_empty() {
+        anyhow::bail!("provider id is empty");
+    }
+    let home = tester_home();
+    std::fs::create_dir_all(&home).with_context(|| i18n::io_ctx(Msg::IoCreate, &home))?;
+    let path = llm_provider_path();
+    let tmp = home.join("provider.tmp");
+    std::fs::write(&tmp, format!("{id}\n")).with_context(|| i18n::io_ctx(Msg::IoWrite, &tmp))?;
+    std::fs::rename(&tmp, &path).with_context(|| i18n::io_ctx(Msg::IoWrite, &path))?;
+    Ok(path)
 }
 
 pub fn persist_llm_model(model: &str) -> Result<PathBuf> {
@@ -339,32 +446,17 @@ fn read_toml_file(path: &Path) -> Result<Option<toml::Value>> {
     Ok(Some(value))
 }
 
-fn merge_toml(base: toml::Value, overlay: toml::Value) -> toml::Value {
-    match (base, overlay) {
-        (toml::Value::Table(mut base_map), toml::Value::Table(overlay_map)) => {
-            for (key, value) in overlay_map {
-                let next = match base_map.remove(&key) {
-                    Some(prev) => merge_toml(prev, value),
-                    None => value,
-                };
-                base_map.insert(key, next);
-            }
-            toml::Value::Table(base_map)
-        }
-        (_, overlay) => overlay,
-    }
-}
-
 fn config_from_raw(raw: RawConfig) -> Config {
+    let mut llm = raw.llm.unwrap_or_default();
+    llm.providers = if raw.providers.is_empty() {
+        default_providers()
+    } else {
+        raw.providers
+    };
+    llm.ensure_providers();
     Config {
         locale: raw.locale,
-        llm: raw.llm.unwrap_or_else(|| LlmConfig {
-            base_url: default_base_url(),
-            model: String::new(),
-            api_key: None,
-            max_tokens: default_max_tokens(),
-            timeout_secs: default_llm_timeout(),
-        }),
+        llm,
         tests: raw.tests.unwrap_or_default(),
         run: raw.run.unwrap_or_default(),
         analysis: raw.analysis.unwrap_or_default(),
@@ -373,30 +465,23 @@ fn config_from_raw(raw: RawConfig) -> Config {
 }
 
 impl Config {
-    pub fn load(path: &Path) -> Result<Self> {
-        let root = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-        let mut merged = toml::Value::Table(toml::map::Map::new());
-
+    /// Load `~/.tester/tester.toml` (or `$TESTER_HOME/tester.toml`) + runtime model/provider.
+    pub fn load() -> Result<Self> {
         let global_path = ensure_global_config()?;
-        if let Some(global) = read_toml_file(&global_path)? {
-            merged = merge_toml(merged, global);
-        }
-        let workspace = root.join("tester.toml");
-        if let Some(local) = read_toml_file(&workspace)? {
-            merged = merge_toml(merged, local);
-        }
-
-        let raw: RawConfig = if matches!(&merged, toml::Value::Table(t) if t.is_empty()) {
-            RawConfig::default()
-        } else {
-            merged
+        let raw: RawConfig = match read_toml_file(&global_path)? {
+            Some(value) => value
                 .try_into()
-                .with_context(|| format!("разбор конфига (global + {})", workspace.display()))?
+                .with_context(|| i18n::io_ctx(Msg::IoParse, &global_path))?,
+            None => RawConfig::default(),
         };
 
         let mut config = config_from_raw(raw);
         if let Some(model) = load_llm_model() {
             config.llm.model = model;
+        }
+        if let Some(provider) = load_llm_provider() {
+            config.llm.active_provider_id = provider;
+            config.llm.ensure_providers();
         }
         crate::i18n::apply_config_locale(config.locale.as_deref());
         Ok(config)
@@ -406,15 +491,9 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
     use std::sync::Mutex;
 
     static ENV_LOCK: Mutex<()> = Mutex::new(());
-
-    fn with_empty_home<T>(f: impl FnOnce() -> T) -> T {
-        let home = tempfile::tempdir().unwrap();
-        with_tester_home(home.path(), f)
-    }
 
     fn with_tester_home<T>(home: &Path, f: impl FnOnce() -> T) -> T {
         let _guard = ENV_LOCK.lock().unwrap();
@@ -426,13 +505,13 @@ mod tests {
 
     #[test]
     fn loads_defaults_without_file() {
-        let dir = tempfile::tempdir().unwrap();
         let home = tempfile::tempdir().unwrap();
-        let cfg = with_tester_home(home.path(), || Config::load(dir.path()).unwrap());
+        let cfg = with_tester_home(home.path(), || Config::load().unwrap());
         assert!(home.path().join("tester.toml").is_file());
         assert_eq!(cfg.run.repair_attempts, 3);
         assert!(cfg.run.agent_auto_approve);
         assert_eq!(cfg.tests.ui.framework, "playwright");
+        assert_eq!(cfg.llm.active_provider().id, "llamacpp");
     }
 
     #[test]
@@ -446,52 +525,102 @@ mod tests {
             ensure_global_config().unwrap();
             let second = std::fs::read_to_string(&path).unwrap();
             assert_eq!(second, "locale = \"ru\"\n");
-            assert!(first.contains("[llm]"));
+            assert!(first.contains("[[providers]]"));
+            assert!(!first.contains("[[llm.providers]]"));
         });
     }
 
     #[test]
-    fn loads_tester_toml() {
-        let dir = tempfile::tempdir().unwrap();
-        let mut f = std::fs::File::create(dir.path().join("tester.toml")).unwrap();
-        write!(
-            f,
+    fn loads_global_tester_toml() {
+        let home = tempfile::tempdir().unwrap();
+        std::fs::write(
+            home.path().join("tester.toml"),
             r#"
-[llm]
+[[providers]]
+id = "cloud"
+kind = "openai_compat"
+base_url = "http://cloud:1/v1"
 api_key = "sk-test"
+
 [run]
 repair_attempts = 2
 android_opt_in = true
-"#
+"#,
         )
         .unwrap();
-        let cfg = with_empty_home(|| {
+        let cfg = with_tester_home(home.path(), || {
             persist_llm_model("demo-model").unwrap();
-            Config::load(dir.path()).unwrap()
+            persist_llm_provider("cloud").unwrap();
+            Config::load().unwrap()
         });
         assert_eq!(cfg.llm.model, "demo-model");
-        assert_eq!(cfg.llm.api_key.as_deref(), Some("sk-test"));
+        assert_eq!(cfg.llm.active_provider().id, "cloud");
+        assert_eq!(cfg.llm.api_key(), Some("sk-test"));
         assert_eq!(cfg.run.repair_attempts, 2);
         assert!(cfg.run.android_opt_in);
         assert!(cfg.run.agent_auto_approve);
     }
 
     #[test]
-    fn ignores_model_key_in_toml() {
-        let dir = tempfile::tempdir().unwrap();
-        let mut f = std::fs::File::create(dir.path().join("tester.toml")).unwrap();
-        write!(
-            f,
+    fn ignores_project_tester_toml() {
+        let home = tempfile::tempdir().unwrap();
+        let project = tempfile::tempdir().unwrap();
+        std::fs::write(
+            home.path().join("tester.toml"),
+            r#"
+[[providers]]
+id = "global"
+kind = "openai_compat"
+base_url = "http://global:8080/v1"
+
+[run]
+repair_attempts = 9
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            project.path().join("tester.toml"),
+            r#"
+[[providers]]
+id = "project"
+kind = "openai_compat"
+base_url = "http://project:1/v1"
+
+[run]
+repair_attempts = 1
+android_opt_in = true
+"#,
+        )
+        .unwrap();
+        let cfg = with_tester_home(home.path(), || Config::load().unwrap());
+        assert_eq!(cfg.llm.active_provider().id, "global");
+        assert_eq!(cfg.llm.base_url(), "http://global:8080/v1");
+        assert_eq!(cfg.run.repair_attempts, 9);
+        assert!(!cfg.run.android_opt_in);
+    }
+
+    #[test]
+    fn rejects_legacy_llm_providers_and_model() {
+        let home = tempfile::tempdir().unwrap();
+        std::fs::write(
+            home.path().join("tester.toml"),
             r#"
 [llm]
 model = "from-toml"
-api_key = "sk"
-"#
+
+[[llm.providers]]
+id = "legacy"
+kind = "openai_compat"
+base_url = "http://legacy:1/v1"
+"#,
         )
         .unwrap();
-        let cfg = with_empty_home(|| Config::load(dir.path()).unwrap());
-        assert!(cfg.llm.model.is_empty());
-        assert_eq!(cfg.llm.api_key.as_deref(), Some("sk"));
+        let err = with_tester_home(home.path(), || Config::load().unwrap_err());
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("unknown field") || msg.contains("providers") || msg.contains("model"),
+            "unexpected error: {msg}"
+        );
     }
 
     #[test]
@@ -507,47 +636,13 @@ api_key = "sk"
 
     #[test]
     fn agent_auto_approve_can_be_disabled() {
-        let dir = tempfile::tempdir().unwrap();
-        let mut f = std::fs::File::create(dir.path().join("tester.toml")).unwrap();
-        write!(f, "[run]\nagent_auto_approve = false\n").unwrap();
-        let cfg = with_empty_home(|| Config::load(dir.path()).unwrap());
-        assert!(!cfg.run.agent_auto_approve);
-    }
-
-    #[test]
-    fn global_config_merges_under_workspace() {
         let home = tempfile::tempdir().unwrap();
-        let project = tempfile::tempdir().unwrap();
-
         std::fs::write(
             home.path().join("tester.toml"),
-            r#"
-[llm]
-base_url = "http://global:11434/v1"
-api_key = "sk-global"
-[run]
-repair_attempts = 9
-"#,
+            "[run]\nagent_auto_approve = false\n",
         )
         .unwrap();
-        std::fs::write(
-            project.path().join("tester.toml"),
-            r#"
-[run]
-android_opt_in = true
-"#,
-        )
-        .unwrap();
-
-        let cfg = with_tester_home(home.path(), || {
-            persist_llm_model("runtime-model").unwrap();
-            Config::load(project.path()).unwrap()
-        });
-
-        assert_eq!(cfg.llm.model, "runtime-model");
-        assert_eq!(cfg.llm.base_url, "http://global:11434/v1");
-        assert_eq!(cfg.llm.api_key.as_deref(), Some("sk-global"));
-        assert_eq!(cfg.run.repair_attempts, 9);
-        assert!(cfg.run.android_opt_in);
+        let cfg = with_tester_home(home.path(), || Config::load().unwrap());
+        assert!(!cfg.run.agent_auto_approve);
     }
 }

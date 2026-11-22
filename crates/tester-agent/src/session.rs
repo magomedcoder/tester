@@ -2,7 +2,7 @@ use crate::session_store;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use tester_llm::{ChatMessage, Usage};
+use tester_providers::{ChatMessage, Usage};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AgentSession {

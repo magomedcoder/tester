@@ -15,7 +15,7 @@ serde_json = { workspace = true }
 tester-agent = { workspace = true }
 tester-core = { workspace = true }
 tester-lang = { workspace = true }
-tester-llm = { workspace = true }
+tester-providers = { workspace = true }
 tester-security = { workspace = true }
 unicode-width = { workspace = true }
 walkdir = { workspace = true }

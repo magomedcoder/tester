@@ -22,7 +22,7 @@ pub(crate) fn cmd_debug(
 ) -> Result<ExitCode> {
     let bug_text = tester_pipeline::debug::read_bug_input(bug, bug_file, stdin)?;
     let mut profile = prepare_project(path)?;
-    let config = load_config(&profile)?;
+    let config = load_config()?;
     apply_config_flags(&mut profile, &config);
     let llm = need_llm_with_model(&config, model)?;
     let opts = tester_pipeline::debug::DebugOptions {

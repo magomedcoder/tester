@@ -9,7 +9,7 @@ use tester_core::gate;
 use tester_core::i18n::{self, Msg};
 use tester_core::model::{Draft, Language, PlanItem, ProjectProfile, TestKind};
 use tester_lang::index::iter_source_files;
-use tester_llm::Llm;
+use tester_providers::Llm;
 use tracing::debug;
 
 pub fn generate_draft(

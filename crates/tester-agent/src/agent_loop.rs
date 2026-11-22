@@ -7,7 +7,7 @@ use anyhow::{Result, bail};
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 use tester_core::i18n::{self, Msg};
-use tester_llm::{ChatMessage, Usage};
+use tester_providers::{ChatMessage, Usage};
 use tracing::{info, warn};
 
 pub type OnDelta = std::sync::Arc<dyn Fn(&str) + Send + Sync>;

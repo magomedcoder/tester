@@ -1,6 +1,6 @@
 use crate::session::AgentSession;
 use anyhow::Result;
-use tester_llm::{ChatMessage, Llm};
+use tester_providers::{ChatMessage, Llm};
 use tracing::info;
 
 pub fn maybe_compact(llm: &dyn Llm, session: &mut AgentSession, max_chars: usize) -> Result<()> {

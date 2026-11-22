@@ -35,7 +35,7 @@ use std::sync::atomic::AtomicBool;
 use tester_core::config::Config;
 use tester_core::i18n::{self, Msg};
 use tester_core::model::ProjectProfile;
-use tester_llm::Llm;
+use tester_providers::Llm;
 
 pub struct AgentContext {
     pub profile: ProjectProfile,
@@ -70,7 +70,7 @@ pub fn open_context_ex(
     if profile.language == tester_core::model::Language::Cpp {
         profile = tester_lang::discover::discover(path)?;
     }
-    let mut config = Config::load(&profile.root)?;
+    let mut config = Config::load()?;
     if config.run.android_opt_in {
         profile.android_opt_in = true;
     }
@@ -85,7 +85,7 @@ pub fn open_context_ex(
     if let Some(m) = &explicit {
         config.llm.model = m.clone();
     }
-    let llm = match tester_llm::ensure_llm_config(config.llm.clone()) {
+    let llm = match tester_providers::ensure_llm_config(config.llm.clone()) {
         Ok(cfg) => {
             let should_persist = explicit.is_some() || (!had_model && !cfg.model.trim().is_empty());
             config.llm = cfg;
@@ -96,7 +96,7 @@ pub fn open_context_ex(
                     }
                 }
             }
-            tester_llm::create_client_with_model(&config.llm)?
+            tester_providers::create_client_with_model(&config.llm)?
         }
         Err(err) => {
             let soft = tui_safe
@@ -110,7 +110,7 @@ pub fn open_context_ex(
                         )
                     });
             if soft {
-                tester_llm::unset_model_client()
+                tester_providers::unset_model_client()
             } else {
                 return Err(err);
             }
@@ -164,12 +164,12 @@ pub fn run_one_shot_ex(
     if session.messages.is_empty() {
         session
             .messages
-            .push(tester_llm::ChatMessage::system(prompt::system_prompt(
+            .push(tester_providers::ChatMessage::system(prompt::system_prompt(
                 &ctx.profile,
                 &ctx.config,
             )));
     }
-    session.messages.push(tester_llm::ChatMessage::user(prompt));
+    session.messages.push(tester_providers::ChatMessage::user(prompt));
 
     let opts = AgentOptions {
         max_turns: ctx.config.run.max_agent_turns,

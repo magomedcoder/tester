@@ -48,7 +48,7 @@ impl DoctorReport {
 
 pub fn run_doctor(path: &Path) -> Result<DoctorReport> {
     let profile = discover(path)?;
-    let config = Config::load(&profile.root)?;
+    let config = Config::load()?;
     let mut checks = Vec::new();
 
     checks.push(check_llm(&config));
@@ -88,7 +88,7 @@ pub fn run_doctor(path: &Path) -> Result<DoctorReport> {
 
 pub fn run_ui_doctor(path: &Path) -> Result<DoctorReport> {
     let profile = discover(path)?;
-    let config = Config::load(&profile.root)?;
+    let config = Config::load()?;
     let mut checks = Vec::new();
     checks.push(check_ui(&profile));
     let base = &config.tests.ui.base_url;
@@ -128,7 +128,7 @@ pub fn run_ui_doctor(path: &Path) -> Result<DoctorReport> {
 }
 
 fn check_llm(config: &Config) -> (String, bool, String) {
-    match tester_llm::list_models(&config.llm) {
+    match tester_providers::list_models(&config.llm) {
         Ok(models) => {
             let selected = config.llm.model.trim();
             let (ok, model) = if !selected.is_empty() {
@@ -144,8 +144,9 @@ fn check_llm(config: &Config) -> (String, bool, String) {
                 "llm".into(),
                 ok,
                 format!(
-                    "{} model={} ({} listed)",
-                    config.llm.base_url,
+                    "{} [{}] model={} ({} listed)",
+                    config.llm.base_url(),
+                    config.llm.active_provider().id,
                     model,
                     models.len()
                 ),
@@ -154,7 +155,7 @@ fn check_llm(config: &Config) -> (String, bool, String) {
         Err(e) => (
             "llm".into(),
             false,
-            format!("{e:#} ({})", config.llm.base_url),
+            format!("{e:#} ({})", config.llm.base_url()),
         ),
     }
 }

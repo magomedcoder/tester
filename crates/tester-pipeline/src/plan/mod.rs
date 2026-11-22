@@ -640,55 +640,73 @@ mod tests {
         .unwrap();
     }
 
+    fn with_empty_home<T>(f: impl FnOnce() -> T) -> T {
+        let home = tempfile::tempdir().unwrap();
+        let prev = std::env::var_os("TESTER_HOME");
+        unsafe { std::env::set_var("TESTER_HOME", home.path()) };
+        let out = f();
+        match prev {
+            Some(v) => unsafe { std::env::set_var("TESTER_HOME", v) },
+            None => unsafe { std::env::remove_var("TESTER_HOME") },
+        }
+        out
+    }
+
     #[test]
     fn unit_plan_includes_multiply_not_add() {
-        let dir = tempfile::tempdir().unwrap();
-        write_rust(dir.path());
-        let profile = discover(dir.path()).unwrap();
-        let config = Config::load(dir.path()).unwrap();
-        let plan = build_plan(&profile, &config, TestKind::Unit).unwrap();
-        let names: Vec<_> = plan
-            .items
-            .iter()
-            .map(|i| i.gap.symbol.name.as_str())
-            .collect();
-        assert!(names.contains(&"multiply"), "{names:?}");
-        assert!(!names.contains(&"add"), "{names:?}");
-        assert!(!names.contains(&"get_name"), "{names:?}");
+        with_empty_home(|| {
+            let dir = tempfile::tempdir().unwrap();
+            write_rust(dir.path());
+            let profile = discover(dir.path()).unwrap();
+            let config = Config::load().unwrap();
+            let plan = build_plan(&profile, &config, TestKind::Unit).unwrap();
+            let names: Vec<_> = plan
+                .items
+                .iter()
+                .map(|i| i.gap.symbol.name.as_str())
+                .collect();
+            assert!(names.contains(&"multiply"), "{names:?}");
+            assert!(!names.contains(&"add"), "{names:?}");
+            assert!(!names.contains(&"get_name"), "{names:?}");
+        });
     }
 
     #[test]
     fn integration_plan_includes_read_config() {
-        let dir = tempfile::tempdir().unwrap();
-        write_rust(dir.path());
-        let profile = discover(dir.path()).unwrap();
-        let config = Config::load(dir.path()).unwrap();
-        let plan = build_plan(&profile, &config, TestKind::Integration).unwrap();
-        let names: Vec<_> = plan
-            .items
-            .iter()
-            .map(|i| i.gap.symbol.name.as_str())
-            .collect();
-        assert!(names.contains(&"read_config"), "{names:?}");
-        assert!(!names.contains(&"multiply"), "{names:?}");
+        with_empty_home(|| {
+            let dir = tempfile::tempdir().unwrap();
+            write_rust(dir.path());
+            let profile = discover(dir.path()).unwrap();
+            let config = Config::load().unwrap();
+            let plan = build_plan(&profile, &config, TestKind::Integration).unwrap();
+            let names: Vec<_> = plan
+                .items
+                .iter()
+                .map(|i| i.gap.symbol.name.as_str())
+                .collect();
+            assert!(names.contains(&"read_config"), "{names:?}");
+            assert!(!names.contains(&"multiply"), "{names:?}");
+        });
     }
 
     #[test]
     fn max_items_respected() {
-        let dir = tempfile::tempdir().unwrap();
-        write_rust(dir.path());
-        let profile = discover(dir.path()).unwrap();
-        let config = Config::load(dir.path()).unwrap();
-        let plan = build_plan_with(
-            &profile,
-            &config,
-            TestKind::Unit,
-            &PlanOptions {
-                max_items: Some(1),
-                ..Default::default()
-            },
-        )
-        .unwrap();
-        assert!(plan.items.len() <= 1);
+        with_empty_home(|| {
+            let dir = tempfile::tempdir().unwrap();
+            write_rust(dir.path());
+            let profile = discover(dir.path()).unwrap();
+            let config = Config::load().unwrap();
+            let plan = build_plan_with(
+                &profile,
+                &config,
+                TestKind::Unit,
+                &PlanOptions {
+                    max_items: Some(1),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            assert!(plan.items.len() <= 1);
+        });
     }
 }

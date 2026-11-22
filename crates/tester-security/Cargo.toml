@@ -13,7 +13,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 tester-core = { workspace = true }
 tester-lang = { workspace = true }
-tester-llm = { workspace = true }
+tester-providers = { workspace = true }
 toml = { workspace = true }
 tracing = { workspace = true }
 walkdir = { workspace = true }

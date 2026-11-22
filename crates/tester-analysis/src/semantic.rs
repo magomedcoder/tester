@@ -153,13 +153,13 @@ fn embed_texts(llm: &LlmConfig, model: &str, texts: &[String]) -> Result<Vec<Vec
     let http = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(llm.timeout_secs.max(30)))
         .build()?;
-    let url = format!("{}/embeddings", llm.base_url.trim_end_matches('/'));
+    let url = format!("{}/embeddings", llm.base_url());
     let body = serde_json::json!({
         "model": model,
         "input": texts,
     });
     let mut req = http.post(&url).json(&body);
-    if let Some(key) = &llm.api_key {
+    if let Some(key) = llm.api_key() {
         req = req.bearer_auth(key);
     }
     let resp = req.send()?;

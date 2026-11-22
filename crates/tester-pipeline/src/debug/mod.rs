@@ -10,7 +10,7 @@ use tester_core::config::Config;
 use tester_core::i18n::{self, Msg};
 use tester_core::model::{ItemStatus, ProjectProfile, ReportItem, RunReport, TestKind};
 use tester_core::stacktrace::parse_stacktrace;
-use tester_llm::Llm;
+use tester_providers::Llm;
 use tracing::info;
 
 #[derive(Debug, Clone)]

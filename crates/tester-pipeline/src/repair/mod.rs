@@ -12,7 +12,7 @@ use tester_core::model::{
     Draft, ItemStatus, PlanItem, ProjectProfile, ReportItem, RunReport, TestKind, TestPlan,
 };
 use tester_lang::green_cache;
-use tester_llm::Llm;
+use tester_providers::Llm;
 use tracing::{info, warn};
 
 #[derive(Debug, Serialize, Deserialize)]

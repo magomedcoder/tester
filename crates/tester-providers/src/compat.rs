@@ -22,11 +22,12 @@ impl CompatClient {
         let http = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(config.timeout_secs))
             .build()?;
+        let key = api_key.or_else(|| config.api_key().map(str::to_string));
         Ok(Self {
             http,
-            base_url: config.base_url.trim_end_matches('/').to_string(),
+            base_url: config.base_url().to_string(),
             model: config.model.clone(),
-            api_key,
+            api_key: key,
             max_tokens: config.max_tokens,
         })
     }

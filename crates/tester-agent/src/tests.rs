@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use tester_core::config::Config;
 use tester_core::model::{Capabilities, Language, ProjectProfile, TestStyle};
-use tester_llm::{AssistantToolCall, ChatMessage, ChatResult, FunctionCall, MockLlm, Usage};
+use tester_providers::{AssistantToolCall, ChatMessage, ChatResult, FunctionCall, MockLlm, Usage};
 
 fn profile(root: &std::path::Path) -> ProjectProfile {
     ProjectProfile {
@@ -39,7 +39,7 @@ fn profile(root: &std::path::Path) -> ProjectProfile {
 fn agent_loop_ends_on_text_without_tools() {
     let dir = tempfile::tempdir().unwrap();
     let llm = Arc::new(MockLlm::with_complete("готово"));
-    let cfg = Config::load(dir.path()).unwrap();
+    let cfg = Config::load().unwrap();
     let ctx = AgentContext {
         profile: profile(dir.path()),
         config: cfg,
@@ -101,7 +101,7 @@ fn agent_loop_executes_tool_then_finishes() {
         },
     ];
     let llm = Arc::new(MockLlm::with_chat(script));
-    let cfg = Config::load(dir.path()).unwrap();
+    let cfg = Config::load().unwrap();
     let ctx = AgentContext {
         profile: profile(dir.path()),
         config: cfg,
@@ -156,7 +156,7 @@ fn tool_error_becomes_tool_result_not_panic() {
         },
     ];
     let llm = Arc::new(MockLlm::with_chat(script));
-    let cfg = Config::load(dir.path()).unwrap();
+    let cfg = Config::load().unwrap();
     let ctx = AgentContext {
         profile: profile(dir.path()),
         config: cfg,

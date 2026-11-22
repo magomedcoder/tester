@@ -17,17 +17,14 @@ struct ModelEntry {
 }
 
 pub fn list_models(config: &LlmConfig) -> Result<Vec<String>> {
-    let base = config.base_url.trim_end_matches('/');
-    let url = format!("{base}/models");
+    let url = format!("{}/models", config.base_url());
     let http = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(config.timeout_secs.clamp(3, 15)))
         .build()
         .context("http client")?;
     let mut req = http.get(&url);
-    if let Some(key) = &config.api_key {
-        if !key.is_empty() {
-            req = req.bearer_auth(key);
-        }
+    if let Some(key) = config.api_key() {
+        req = req.bearer_auth(key);
     }
     let resp = req.send().with_context(|| format!("GET {url}"))?;
     let status = resp.status();
@@ -81,11 +78,8 @@ mod tests {
     #[test]
     fn ensure_keeps_explicit_model() {
         let cfg = LlmConfig {
-            base_url: "http://127.0.0.1:9/v1".into(),
             model: "explicit".into(),
-            api_key: None,
-            max_tokens: 100,
-            timeout_secs: 1,
+            ..Default::default()
         };
         let out = ensure_llm_config(cfg).unwrap();
         assert_eq!(out.model, "explicit");

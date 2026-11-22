@@ -42,7 +42,7 @@ pub fn create_client_with_model(config: &LlmConfig) -> Result<Arc<dyn Llm>> {
     if config.model.trim().is_empty() {
         bail!(AppError::ModelNeedsSelection { count: 0 });
     }
-    Ok(Arc::new(CompatClient::new(config, config.api_key.clone())?))
+    Ok(Arc::new(CompatClient::new(config, None)?))
 }
 
 pub fn unset_model_client() -> Arc<dyn Llm> {

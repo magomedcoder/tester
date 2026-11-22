@@ -340,7 +340,7 @@ Commands:
         }
         Msg::NoteCppKinds => "C++: contract/UI kinds unsupported; unit+integration via gtest",
         Msg::NoteAndroidOptIn => {
-            "Android project: instrumented tests require run.android_opt_in = true in tester.toml"
+            "Android project: instrumented tests require run.android_opt_in = true in ~/.tester/tester.toml"
         }
         Msg::NoteVenv => ".venv found",
         Msg::NoteLaravel => "Laravel detected",
@@ -389,13 +389,13 @@ Commands:
         Msg::SessionIdAmbiguous => "ambiguous session id '{prefix}' ({n} matches)",
         Msg::ErrNoModels => "no models at endpoint (GET /models returned empty)",
         Msg::ErrModelNeedsSelection => {
-            "model not set: {count} models available — pick with /model or --model"
+            "model not set: {count} models available - pick with /model or --model"
         }
         Msg::SlashModel => "select LLM model (from /models)",
         Msg::ModelOverlayTitle => " models  Enter select  r refresh  Esc ",
         Msg::ModelOverlayEmpty => "(no models)",
         Msg::ModelSelected => "model: {model}",
-        Msg::ModelSelectHint => "model not set — /model to choose (or --model)",
+        Msg::ModelSelectHint => "model not set - /model to choose (or --model)",
         Msg::ModelPersisted => "saved model={model} to {path}",
         Msg::ModelNotSetBadge => "model?",
         Msg::ModelBusyReject => "cannot switch model while a job is running",

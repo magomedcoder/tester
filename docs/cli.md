@@ -16,7 +16,7 @@ Most commands take `<PATH>` - path to the project or any file inside it (root is
 | `-h`, `--help`        | Help                                                                    |
 | `-V`, `--version`     | Version                                                                 |
 
-`base_url`, `api_key`, and `agent_auto_approve` come from `~/.tester/tester.toml` and/or `<project>/tester.toml` (`[llm]` / `[run]`; project wins). 
+`[[providers]]` and `agent_auto_approve` come from `~/.tester/tester.toml` (`[[providers]]` / `[run]`). 
 Model `--model`, `tester models`, or TUI `/model` (auto-pick when exactly one model is listed; last choice in `~/.tester/model`). 
 Locale: `--locale` -> `TESTER_LOCALE` -> `LANG` -> `locale` in toml -> `en`.
 
@@ -216,7 +216,7 @@ All keys: [config.md](config.md).
 
 ## `ui init`
 
-Minimal Playwright setup: `playwright.config.ts`, `e2e/` directory, UI section in `tester.toml` (if the file does not exist yet), `npm install` + chromium when possible.
+Minimal Playwright setup: `playwright.config.ts`, `e2e/` directory, `npm install` + chromium when possible. UI settings (`[tests.ui]`) live in `~/.tester/tester.toml`.
 
 ```bash
 tester ui init /path/to/web-app

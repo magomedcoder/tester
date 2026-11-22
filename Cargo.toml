@@ -11,7 +11,7 @@ description = "LLM agent for generating and fixing tests: unit, integration, UI,
 [workspace.dependencies]
 tester-core = { path = "crates/tester-core" }
 tester-lang = { path = "crates/tester-lang" }
-tester-llm = { path = "crates/tester-llm" }
+tester-providers = { path = "crates/tester-providers" }
 tester-analysis = { path = "crates/tester-analysis" }
 tester-security = { path = "crates/tester-security" }
 tester-pipeline = { path = "crates/tester-pipeline" }

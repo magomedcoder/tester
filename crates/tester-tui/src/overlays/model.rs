@@ -7,7 +7,7 @@ use ratatui::layout::Rect;
 use ratatui::widgets::Clear;
 use tester_core::config::LlmConfig;
 use tester_core::i18n::{self, Msg};
-use tester_llm::list_models;
+use tester_providers::list_models;
 
 #[derive(Debug)]
 pub struct ModelOverlay {

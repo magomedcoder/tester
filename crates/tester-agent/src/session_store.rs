@@ -345,7 +345,7 @@ mod tests {
         assert_eq!(active_id(&ws).as_deref(), Some(meta.id.as_str()));
         session
             .messages
-            .push(tester_llm::ChatMessage::user("hello world"));
+            .push(tester_providers::ChatMessage::user("hello world"));
         save(&meta.id, &session).unwrap();
 
         let listed = list_for_workspace(&ws).unwrap();

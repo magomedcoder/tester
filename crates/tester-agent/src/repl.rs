@@ -5,7 +5,7 @@ use anyhow::Result;
 use std::io::{self, Write};
 use tester_core::i18n::{self, Msg};
 use tester_core::model::TestKind;
-use tester_llm::ChatMessage;
+use tester_providers::ChatMessage;
 use tester_pipeline::plan::{PlanOptions, build_plan_with};
 use tester_pipeline::plan_store::save_plan;
 
