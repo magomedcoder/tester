@@ -1,0 +1,27 @@
+[package]
+name = "tester"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description.workspace = true
+
+[[bin]]
+name = "tester"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+ctrlc = { workspace = true }
+serde_json = { workspace = true }
+tester-agent = { workspace = true }
+tester-core = { workspace = true }
+tester-lang = { workspace = true }
+tester-llm = { workspace = true }
+tester-pipeline = { workspace = true }
+tester-tui = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

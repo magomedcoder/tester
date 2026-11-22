@@ -1,15 +1,22 @@
-[package]
-name = "tester"
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-description = "LLM agent for generating and fixing tests: unit, integration, UI, and contract"
 license = "MIT"
+description = "LLM agent for generating and fixing tests: unit, integration, UI, and contract"
 
-[[bin]]
-name = "tester"
-path = "src/main.rs"
+[workspace.dependencies]
+tester-core = { path = "crates/tester-core" }
+tester-lang = { path = "crates/tester-lang" }
+tester-llm = { path = "crates/tester-llm" }
+tester-analysis = { path = "crates/tester-analysis" }
+tester-pipeline = { path = "crates/tester-pipeline" }
+tester-agent = { path = "crates/tester-agent" }
+tester-tui = { path = "crates/tester-tui" }
 
-[dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 crossterm = "0.28"
@@ -23,7 +30,6 @@ similar = "2"
 toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+unicode-width = "0.2"
 walkdir = "2"
-
-[dev-dependencies]
 tempfile = "3"

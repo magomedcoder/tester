@@ -1,0 +1,23 @@
+[package]
+name = "tester-agent"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+crossterm = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tester-analysis = { workspace = true }
+tester-core = { workspace = true }
+tester-lang = { workspace = true }
+tester-llm = { workspace = true }
+tester-pipeline = { workspace = true }
+tracing = { workspace = true }
+walkdir = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -1,6 +1,0 @@
-{
-  "name": "fixture_ts_contract",
-  "dependencies": {
-    "express": "^4.18.0"
-  }
-}
