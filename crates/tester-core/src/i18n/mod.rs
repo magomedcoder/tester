@@ -450,7 +450,6 @@ pub enum Msg {
     ErrDocsOcr,
     ErrDocsConvert,
     ErrDocsUnsupportedConvert,
-    ErrDocsUnsupportedKind,
     DocsShowOk,
     DocsConvertOk,
 }

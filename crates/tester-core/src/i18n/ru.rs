@@ -213,14 +213,21 @@ Tester - справка
 - Ctrl+X Ctrl+E - внешний редактор
 
 ## Slash
-/scan /plan /run /grep /symbol /refs /search /index /map /show_file /list_files
+/scan /plan /run /grep /symbol /refs /search /index /map /list_files
+/show_file /convert /wiki /security /model
 /manual /diff /branch /recent /session /prune /propose_plan /audit /clear /exit
 
 ## Analysis tools
 find_symbol, project_map, graph_callers, semantic_search (opt-in embeddings)
 
+## Документы
+show_file (PDF/office/OCR), convert_document
+
+## Wiki
+wiki_sync, wiki_search, wiki_scenario_list
+
 ## Approvals
-y/N для write/shellapprove/reject плана через /propose_plan
+y/N для write/shell; approve/reject плана через /propose_plan
 "
         }
         Msg::ManualTocTitle => " оглавление ",
@@ -264,6 +271,7 @@ y/N для write/shellapprove/reject плана через /propose_plan
   /map
   /list_files
   /show_file <path>
+  /convert <path> [txt|md|pdf]
   /exit"
         }
         Msg::AuditEmpty => "аудит: пусто",
@@ -499,7 +507,6 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::ErrDocsOcr => "OCR не удался для {path}: {err}",
         Msg::ErrDocsConvert => "конвертация не удалась для {path}: {err}",
         Msg::ErrDocsUnsupportedConvert => "нельзя конвертировать {kind} в {to}",
-        Msg::ErrDocsUnsupportedKind => "неподдерживаемый тип документа: {path}",
         Msg::DocsShowOk => "show {path} kind={kind} source={source} engine={engine} cache_hit={hit} chars={chars}",
         Msg::DocsConvertOk => "сконвертировано {path} -> {out} через {engine}",
     }

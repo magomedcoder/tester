@@ -213,14 +213,21 @@ Commands"
 - Ctrl+X Ctrl+E - external editor
 
 ## Slash
-/scan /plan /run /grep /symbol /refs /search /index /map /show_file /list_files
+/scan /plan /run /grep /symbol /refs /search /index /map /list_files
+/show_file /convert /wiki /security /model
 /manual /diff /branch /recent /session /prune /propose_plan /audit /clear /exit
 
 ## Analysis tools
 find_symbol, project_map, graph_callers, semantic_search (opt-in embeddings)
 
+## Documents
+show_file (PDF/office/OCR), convert_document
+
+## Wiki
+wiki_sync, wiki_search, wiki_scenario_list
+
 ## Approvals
-y/N for write/shellplan approve/reject via /propose_plan
+y/N for write/shell; plan approve/reject via /propose_plan
 "
         }
         Msg::ManualTocTitle => " TOC ",
@@ -264,6 +271,7 @@ Commands:
   /map
   /list_files
   /show_file <path>
+  /convert <path> [txt|md|pdf]
   /exit"
         }
         Msg::AuditEmpty => "audit: empty",
@@ -499,7 +507,6 @@ Commands:
         Msg::ErrDocsOcr => "OCR failed for {path}: {err}",
         Msg::ErrDocsConvert => "convert failed for {path}: {err}",
         Msg::ErrDocsUnsupportedConvert => "cannot convert {kind} to {to}",
-        Msg::ErrDocsUnsupportedKind => "unsupported document kind for {path}",
         Msg::DocsShowOk => "show {path} kind={kind} source={source} engine={engine} cache_hit={hit} chars={chars}",
         Msg::DocsConvertOk => "converted {path} -> {out} via {engine}",
     }

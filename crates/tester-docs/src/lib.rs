@@ -5,12 +5,12 @@ mod detect;
 mod extract;
 mod ocr;
 
-pub use convert::{ConvertResult, ConvertTo, convert_document};
-pub use detect::{DocKind, detect_kind, prefers_outline};
+pub use convert::{ConvertTo, convert_document};
+pub use detect::{DocKind, prefers_outline};
 
 use anyhow::Result;
 use cache::CacheMeta;
-use detect::DocKind as Kind;
+use detect::{DocKind as Kind, detect_kind};
 use std::path::{Path, PathBuf};
 use tester_core::config::DocumentsConfig;
 use tester_core::i18n::{self, Msg};
@@ -26,7 +26,7 @@ pub struct ShowResult {
     pub path: PathBuf,
 }
 
-pub fn resolve_path(project_root: &Path, path: &Path) -> Result<PathBuf> {
+fn resolve_path(project_root: &Path, path: &Path) -> Result<PathBuf> {
     let abs = if path.is_absolute() {
         path.to_path_buf()
     } else {

@@ -1,3 +1,4 @@
+use super::analysis::OutlineFile;
 use super::{Tool, ToolKind, arg_str, arg_str_opt, truncate};
 use crate::AgentContext;
 use anyhow::Result;
@@ -36,9 +37,7 @@ impl Tool for ShowFile {
         let p = PathBuf::from(&path);
 
         if prefers_outline(&p) {
-            if let Some(outline) = crate::tools::default_registry(ctx).get("outline_file") {
-                return outline.execute(ctx, args);
-            }
+            return OutlineFile.execute(ctx, args);
         }
 
         let shown = show_document(&ctx.profile.root, &p, &ctx.config.documents)?;

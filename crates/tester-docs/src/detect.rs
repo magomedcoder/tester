@@ -30,10 +30,10 @@ pub fn detect_kind(path: &Path) -> DocKind {
         "doc" | "docx" | "odt" | "rtf" | "xls" | "xlsx" | "ods" | "ppt" | "pptx" | "odp"
         | "csv" => DocKind::Office,
         "png" | "jpg" | "jpeg" | "tif" | "tiff" | "webp" | "bmp" | "gif" => DocKind::Image,
-        "md" | "mdx" | "txt" | "rs" | "py" | "js" | "ts" | "tsx" | "jsx" | "go" | "java"
-        | "kt" | "c" | "h" | "cpp" | "hpp" | "cs" | "rb" | "php" | "swift" | "toml" | "yaml"
-        | "yml" | "json" | "html" | "css" | "xml" | "sh" | "bash" | "zsh" | "sql" | "graphql"
-        | "vue" | "svelte" | "zig" | "rs.in" | "txt.in" => DocKind::Text,
+        "md" | "mdx" | "txt" | "rst" | "adoc" | "rs" | "py" | "js" | "ts" | "tsx" | "jsx"
+        | "go" | "java" | "kt" | "c" | "h" | "cpp" | "hpp" | "cs" | "rb" | "php" | "swift"
+        | "toml" | "yaml" | "yml" | "json" | "html" | "css" | "xml" | "sh" | "bash" | "zsh"
+        | "sql" | "graphql" | "vue" | "svelte" | "zig" => DocKind::Text,
         _ => {
             DocKind::Text
         }

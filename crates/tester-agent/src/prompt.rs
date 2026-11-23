@@ -52,6 +52,7 @@ read_file, list_dir, glob, grep, git_status, git_diff.
 write_file, apply_patch, run_argv.
 Безопасность (только защита): security_scan, security_explain, security_patch.
 Документы: show_file (PDF/office/image + OCR cache), convert_document (txt/md/pdf).
+Wiki: wiki_sync, wiki_search, wiki_scenario_list.
 При вопросах об уязвимостях / RCE сначала security_scan; патчи - harden-only, без эксплойтов.
 Сначала scan/build_plan или find_symbol, затем generate/write, затем run_tests, при падении repair_test.
 Когда задача выполнена - ответь кратким итогом без tool calls.

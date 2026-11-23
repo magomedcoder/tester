@@ -79,6 +79,7 @@ Typing `/` opens the palette (`↑↓` `Tab` `Enter`). Full list:
 | `/list_files`          | Project file list (deeper map)                                |
 | `/show_file <path>`    | Source outline or PDF/office/image text (OCR cached)          |
 | `/convert <path> [to]` | Convert document to txt/md/pdf                                |
+| `/wiki ...`            | Wiki sync/analyze/run/status                                  |
 | `/manual`              | Built-in manual (overlay)                                     |
 | `/recent`              | Recent projects                                               |
 | `/session`             | List / switch chat sessions (overlay)                         |

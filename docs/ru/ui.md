@@ -79,6 +79,7 @@ tester /путь-проекту --plain
 | `/list_files`          | Список файлов проекта (карта с большей глубиной)                     |
 | `/show_file <path>`    | Outline исходника или текст PDF/office/изображения (OCR кэш)         |
 | `/convert <path> [to]` | Конвертация документа в txt/md/pdf                                   |
+| `/wiki ...`            | Wiki sync/analyze/run/status                                         |
 | `/manual`              | Встроенный manual (overlay)                                          |
 | `/recent`              | Недавние проекты                                                     |
 | `/session`             | Список / смена чат-сессий (overlay)                                  |
