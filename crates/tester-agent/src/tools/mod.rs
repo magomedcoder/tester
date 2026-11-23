@@ -1,4 +1,5 @@
 mod analysis;
+mod docs;
 mod domain;
 mod fs;
 mod git;
@@ -92,6 +93,8 @@ pub fn default_registry(ctx: &AgentContext) -> ToolRegistry {
         Arc::new(wiki::WikiSync),
         Arc::new(wiki::WikiSearch),
         Arc::new(wiki::WikiScenarioList),
+        Arc::new(docs::ShowFile),
+        Arc::new(docs::ConvertDocument),
     ];
     if ctx.config.run.allow_docker {
         tools.push(Arc::new(shell::DockerInfo));

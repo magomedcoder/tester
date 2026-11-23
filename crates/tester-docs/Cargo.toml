@@ -1,0 +1,17 @@
+[package]
+name = "tester-docs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "PDF/office/image document show, OCR cache, and convert for Tester"
+
+[dependencies]
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tempfile = { workspace = true }
+tester-core = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

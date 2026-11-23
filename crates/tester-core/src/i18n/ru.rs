@@ -47,7 +47,8 @@ pub(crate) fn t(msg: Msg) -> &'static str {
         Msg::SlashIndex => "статус / rebuild индекса",
         Msg::SlashMap => "карта структуры проекта",
         Msg::SlashListFiles => "список файлов проекта",
-        Msg::SlashShowFile => "outline файла",
+        Msg::SlashShowFile => "outline исходника или текст PDF/office/изображения",
+        Msg::SlashConvert => "конвертировать документ (txt|md|pdf)",
         Msg::SlashManual => "открыть manual",
         Msg::SlashRecent => "недавние проекты",
         Msg::SlashSession => "список / смена / новая сессия чата",
@@ -181,6 +182,7 @@ Tester - справка
         Msg::UsageRefs => "usage: /refs <name>",
         Msg::UsageSearch => "usage: /search <запрос>",
         Msg::UsageShowFile => "usage: /show_file <path>",
+        Msg::UsageConvert => "usage: /convert <path> [txt|md|pdf]",
         Msg::GrepFailed => "grep не удался: {err}",
         Msg::ToolMissing => "tool {name} отсутствует",
         Msg::ToolFailed => "{name} не удался: {err}",
@@ -484,5 +486,21 @@ y/N для write/shellapprove/reject плана через /propose_plan
         Msg::ToolWikiScenarioList => {
             "Список UI-сценариев из .tester/wiki/scenarios.json (после wiki_sync + analyze)"
         }
+        Msg::ToolShowFile => {
+            "Показать файл: outline для кода или извлечённый/OCR текст для PDF/office/изображений (кэш .tester/docs)"
+        }
+        Msg::ToolConvertDocument => {
+            "Конвертировать документ в txt, md или pdf (LibreOffice/pandoc); по умолчанию в .tester/docs/converted"
+        }
+        Msg::ErrDocsMissingBin => "нужен `{bin}` в PATH (или путь в [documents] в tester.toml)",
+        Msg::ErrDocsBinFailed => "инструмент `{bin}` ошибся: {err}",
+        Msg::ErrDocsNotFound => "документ не найден: {path}",
+        Msg::ErrDocsExtract => "не удалось извлечь текст из {path}: {err}",
+        Msg::ErrDocsOcr => "OCR не удался для {path}: {err}",
+        Msg::ErrDocsConvert => "конвертация не удалась для {path}: {err}",
+        Msg::ErrDocsUnsupportedConvert => "нельзя конвертировать {kind} в {to}",
+        Msg::ErrDocsUnsupportedKind => "неподдерживаемый тип документа: {path}",
+        Msg::DocsShowOk => "show {path} kind={kind} source={source} engine={engine} cache_hit={hit} chars={chars}",
+        Msg::DocsConvertOk => "сконвертировано {path} -> {out} через {engine}",
     }
 }

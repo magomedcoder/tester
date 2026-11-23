@@ -51,6 +51,7 @@ read_file, list_dir, glob, grep, git_status, git_diff.
 Домен: scan_project, build_plan, write_test, run_tests, repair_test, debug_failure,
 write_file, apply_patch, run_argv.
 Безопасность (только защита): security_scan, security_explain, security_patch.
+Документы: show_file (PDF/office/image + OCR cache), convert_document (txt/md/pdf).
 При вопросах об уязвимостях / RCE сначала security_scan; патчи - harden-only, без эксплойтов.
 Сначала scan/build_plan или find_symbol, затем generate/write, затем run_tests, при падении repair_test.
 Когда задача выполнена - ответь кратким итогом без tool calls.

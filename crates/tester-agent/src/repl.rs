@@ -254,9 +254,26 @@ fn handle_slash(ctx: &AgentContext, session: &mut AgentSession, cmd: &str) -> Re
             }
             let args = serde_json::json!({"path": path});
             let out = tools::default_registry(ctx)
-                .get("outline_file")
+                .get("show_file")
                 .ok_or_else(|| {
-                    anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "outline_file")]))
+                    anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "show_file")]))
+                })?
+                .execute(ctx, &args)?;
+            println!("{out}");
+            Ok(SlashAction::Continue)
+        }
+        "convert" => {
+            let path = parts.next().unwrap_or("");
+            if path.is_empty() {
+                eprintln!("{}", i18n::t(Msg::UsageConvert));
+                return Ok(SlashAction::Continue);
+            }
+            let to = parts.next().unwrap_or("txt");
+            let args = serde_json::json!({"path": path, "to": to});
+            let out = tools::default_registry(ctx)
+                .get("convert_document")
+                .ok_or_else(|| {
+                    anyhow::anyhow!(i18n::tr(Msg::ToolMissing, &[("name", "convert_document")]))
                 })?
                 .execute(ctx, &args)?;
             println!("{out}");

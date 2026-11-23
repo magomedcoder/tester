@@ -77,7 +77,8 @@ tester /путь-проекту --plain
 | `/index rebuild`       | Пересобрать индекс символов                                          |
 | `/map`                 | Карта структуры проекта                                              |
 | `/list_files`          | Список файлов проекта (карта с большей глубиной)                     |
-| `/show_file <path>`    | Outline файла                                                        |
+| `/show_file <path>`    | Outline исходника или текст PDF/office/изображения (OCR кэш)         |
+| `/convert <path> [to]` | Конвертация документа в txt/md/pdf                                   |
 | `/manual`              | Встроенный manual (overlay)                                          |
 | `/recent`              | Недавние проекты                                                     |
 | `/session`             | Список / смена чат-сессий (overlay)                                  |

@@ -14,6 +14,45 @@ pub struct Config {
     pub analysis: AnalysisConfig,
     #[serde(default)]
     pub security: SecurityConfig,
+    #[serde(default)]
+    pub documents: DocumentsConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DocumentsConfig {
+    #[serde(default)]
+    pub pdftotext: Option<String>,
+    #[serde(default)]
+    pub pdftoppm: Option<String>,
+    #[serde(default)]
+    pub tesseract: Option<String>,
+    #[serde(default)]
+    pub soffice: Option<String>,
+    #[serde(default)]
+    pub pandoc: Option<String>,
+    #[serde(default = "default_ocr_lang")]
+    pub ocr_lang: String,
+    #[serde(default = "default_true")]
+    pub cache: bool,
+}
+
+impl Default for DocumentsConfig {
+    fn default() -> Self {
+        Self {
+            pdftotext: None,
+            pdftoppm: None,
+            tesseract: None,
+            soffice: None,
+            pandoc: None,
+            ocr_lang: default_ocr_lang(),
+            cache: true,
+        }
+    }
+}
+
+fn default_ocr_lang() -> String {
+    "eng+rus".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -342,6 +381,7 @@ struct RawConfig {
     run: Option<RunConfig>,
     analysis: Option<AnalysisConfig>,
     security: Option<SecurityConfig>,
+    documents: Option<DocumentsConfig>,
 }
 
 pub fn tester_home() -> PathBuf {
@@ -375,6 +415,11 @@ embeddings = false
 enabled = true
 deep = false
 fetch_advisories = false
+
+[documents]
+# pdftotext / pdftoppm / tesseract / soffice / pandoc paths optional (default: PATH)
+ocr_lang = "eng+rus"
+cache = true
 "#;
 
 pub(crate) fn ensure_global_config() -> Result<PathBuf> {
@@ -468,6 +513,7 @@ fn config_from_raw(raw: RawConfig) -> Config {
         run: raw.run.unwrap_or_default(),
         analysis: raw.analysis.unwrap_or_default(),
         security: raw.security.unwrap_or_default(),
+        documents: raw.documents.unwrap_or_default(),
     }
 }
 
@@ -666,5 +712,29 @@ base_url = "http://x:1/v1"
         .unwrap();
         let cfg = with_tester_home(home.path(), || Config::load().unwrap());
         assert!(!cfg.run.agent_auto_approve);
+    }
+
+    #[test]
+    fn rejects_unknown_documents_fields() {
+        let home = tempfile::tempdir().unwrap();
+        std::fs::write(
+            home.path().join("tester.toml"),
+            "[documents]\nocr_cache_dir = \"/tmp\"\n",
+        )
+        .unwrap();
+        let err = with_tester_home(home.path(), || Config::load().unwrap_err());
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("unknown field") || msg.contains("ocr_cache_dir"),
+            "unexpected error: {msg}"
+        );
+    }
+
+    #[test]
+    fn loads_documents_defaults() {
+        let home = tempfile::tempdir().unwrap();
+        let cfg = with_tester_home(home.path(), || Config::load().unwrap());
+        assert!(cfg.documents.cache);
+        assert_eq!(cfg.documents.ocr_lang, "eng+rus");
     }
 }

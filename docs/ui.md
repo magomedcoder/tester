@@ -77,7 +77,8 @@ Typing `/` opens the palette (`↑↓` `Tab` `Enter`). Full list:
 | `/index rebuild`       | Rebuild the symbol index                                      |
 | `/map`                 | Project structure map                                         |
 | `/list_files`          | Project file list (deeper map)                                |
-| `/show_file <path>`    | File outline                                                  |
+| `/show_file <path>`    | Source outline or PDF/office/image text (OCR cached)          |
+| `/convert <path> [to]` | Convert document to txt/md/pdf                                |
 | `/manual`              | Built-in manual (overlay)                                     |
 | `/recent`              | Recent projects                                               |
 | `/session`             | List / switch chat sessions (overlay)                         |

@@ -149,7 +149,14 @@ tester chat /path/to/project
 | `--stream`    | Token streaming (on by default)                      |
 | `--no-stream` | Disable streaming                                    |
 
-In `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/clear`, `/audit`, `/grep`, `/symbol`, `/refs`, `/search`, `/index`, `/map`, `/list_files`, `/show_file`, `/exit`.
+In `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/clear`, `/audit`, `/grep`, `/symbol`, `/refs`, `/search`, `/index`, `/map`, `/list_files`, `/show_file`, `/convert`, `/exit`.
+
+### Documents (`/show_file`, `/convert`)
+
+- `/show_file <path>` - source outline for code; extracted text for PDF/office; OCR for images/scanned PDFs (cache: `.tester/docs/cache/`).
+- `/convert <path> [txt|md|pdf]` - convert via LibreOffice/`pandoc`; default output under `.tester/docs/converted/`.
+
+Needs system tools on `PATH` (or paths in `~/.tester/tester.toml` `[documents]`): `pdftotext`, `pdftoppm`, `tesseract`, `soffice`/`libreoffice`, optional `pandoc`. Agent tools: `show_file`, `convert_document`.
 
 In-UI slash commands and keybinds: [ui.md](ui.md).
 

@@ -1524,6 +1524,7 @@ dependencies = [
  "tempfile",
  "tester-analysis",
  "tester-core",
+ "tester-docs",
  "tester-lang",
  "tester-pipeline",
  "tester-providers",
@@ -1557,6 +1558,18 @@ dependencies = [
  "serde",
  "tempfile",
  "toml",
+]
+
+[[package]]
+name = "tester-docs"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tester-core",
+ "tracing",
 ]
 
 [[package]]

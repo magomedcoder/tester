@@ -47,7 +47,8 @@ pub(crate) fn t(msg: Msg) -> &'static str {
         Msg::SlashIndex => "index status or rebuild",
         Msg::SlashMap => "project structure map",
         Msg::SlashListFiles => "list project files",
-        Msg::SlashShowFile => "outline a single file",
+        Msg::SlashShowFile => "show source outline or PDF/office/image text",
+        Msg::SlashConvert => "convert a document (txt|md|pdf)",
         Msg::SlashManual => "open manual overlay",
         Msg::SlashRecent => "recent projects picker",
         Msg::SlashSession => "list / switch / new chat session",
@@ -181,6 +182,7 @@ Commands"
         Msg::UsageRefs => "usage: /refs <name>",
         Msg::UsageSearch => "usage: /search <natural query>",
         Msg::UsageShowFile => "usage: /show_file <path>",
+        Msg::UsageConvert => "usage: /convert <path> [txt|md|pdf]",
         Msg::GrepFailed => "grep failed: {err}",
         Msg::ToolMissing => "{name} tool missing",
         Msg::ToolFailed => "{name} failed: {err}",
@@ -484,5 +486,21 @@ Commands:
         Msg::ToolWikiScenarioList => {
             "List UI scenarios from .tester/wiki/scenarios.json (after wiki_sync + analyze)"
         }
+        Msg::ToolShowFile => {
+            "Show a file: source outline for code, or extracted/OCR text for PDF/office/images (cached under .tester/docs)"
+        }
+        Msg::ToolConvertDocument => {
+            "Convert a document to txt, md, or pdf (LibreOffice/pandoc); writes under .tester/docs/converted by default"
+        }
+        Msg::ErrDocsMissingBin => "document tool needs `{bin}` on PATH (or set [documents] path in tester.toml)",
+        Msg::ErrDocsBinFailed => "document tool `{bin}` failed: {err}",
+        Msg::ErrDocsNotFound => "document not found: {path}",
+        Msg::ErrDocsExtract => "failed to extract text from {path}: {err}",
+        Msg::ErrDocsOcr => "OCR failed for {path}: {err}",
+        Msg::ErrDocsConvert => "convert failed for {path}: {err}",
+        Msg::ErrDocsUnsupportedConvert => "cannot convert {kind} to {to}",
+        Msg::ErrDocsUnsupportedKind => "unsupported document kind for {path}",
+        Msg::DocsShowOk => "show {path} kind={kind} source={source} engine={engine} cache_hit={hit} chars={chars}",
+        Msg::DocsConvertOk => "converted {path} -> {out} via {engine}",
     }
 }

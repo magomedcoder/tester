@@ -18,6 +18,7 @@ tester-providers = { workspace = true }
 tester-pipeline = { workspace = true }
 tester-security = { workspace = true }
 tester-wiki = { workspace = true }
+tester-docs = { workspace = true }
 tracing = { workspace = true }
 walkdir = { workspace = true }
 

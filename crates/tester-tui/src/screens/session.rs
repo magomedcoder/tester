@@ -51,6 +51,7 @@ const SLASH_CMDS: &[&str] = &[
     "map",
     "list_files",
     "show_file",
+    "convert",
     "manual",
     "recent",
     "session",
@@ -80,6 +81,7 @@ fn slash_desc(cmd: &str) -> &'static str {
         "map" => i18n::t(Msg::SlashMap),
         "list_files" => i18n::t(Msg::SlashListFiles),
         "show_file" => i18n::t(Msg::SlashShowFile),
+        "convert" => i18n::t(Msg::SlashConvert),
         "manual" => i18n::t(Msg::SlashManual),
         "recent" => i18n::t(Msg::SlashRecent),
         "session" => i18n::t(Msg::SlashSession),
@@ -1139,7 +1141,19 @@ impl SessionScreen {
                 if path.is_empty() {
                     self.push_system(i18n::t(Msg::UsageShowFile).into());
                 } else {
-                    self.run_analysis_tool("outline_file", serde_json::json!({"path": path}));
+                    self.run_local_tool("show_file", serde_json::json!({"path": path}));
+                }
+            }
+            "convert" => {
+                let path = parts.next().unwrap_or("");
+                if path.is_empty() {
+                    self.push_system(i18n::t(Msg::UsageConvert).into());
+                } else {
+                    let to = parts.next().unwrap_or("txt");
+                    self.run_local_tool(
+                        "convert_document",
+                        serde_json::json!({"path": path, "to": to}),
+                    );
                 }
             }
             "manual" => self.overlay = Some(Overlay::Manual(ManualOverlay::new())),
@@ -1419,8 +1433,17 @@ impl SessionScreen {
         if !self.require_model() {
             return;
         }
+        self.run_local_tool(name, args);
+    }
+
+    fn run_local_tool(&mut self, name: &str, args: serde_json::Value) {
         let model = self.model.clone();
-        match open_context_ex(&self.path, true, false, true, Some(&model)) {
+        let model_opt = if model.trim().is_empty() {
+            None
+        } else {
+            Some(model.as_str())
+        };
+        match open_context_ex(&self.path, true, false, true, model_opt) {
             Ok(ctx) => match tester_agent::tools::default_registry(&ctx)
                 .get(name)
                 .map(|t| t.execute(&ctx, &args))

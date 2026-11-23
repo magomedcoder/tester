@@ -149,7 +149,14 @@ tester chat /путь-проекту
 | `--stream`    | Streaming токенов (по умолчанию вкл.)           |
 | `--no-stream` | Отключить streaming                             |
 
-В `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/clear`, `/audit`, `/grep`, `/symbol`, `/refs`, `/search`, `/index`, `/map`, `/list_files`, `/show_file`, `/exit`.
+В `chat`: `/scan`, `/plan [kind]`, `/run <prompt>`, `/clear`, `/audit`, `/grep`, `/symbol`, `/refs`, `/search`, `/index`, `/map`, `/list_files`, `/show_file`, `/convert`, `/exit`.
+
+### Документы (`/show_file`, `/convert`)
+
+- `/show_file <path>` - outline для кода; извлечённый текст для PDF/office; OCR для изображений/сканов (кэш: `.tester/docs/cache/`).
+- `/convert <path> [txt|md|pdf]` - конвертация через LibreOffice/`pandoc`; по умолчанию в `.tester/docs/converted/`.
+
+Нужны утилиты в `PATH` (или пути в `~/.tester/tester.toml` `[documents]`): `pdftotext`, `pdftoppm`, `tesseract`, `soffice`/`libreoffice`, опционально `pandoc`. Agent tools: `show_file`, `convert_document`.
 
 Команды интерфейса (slash / клавиши): [ui.md](ui.md).
 
